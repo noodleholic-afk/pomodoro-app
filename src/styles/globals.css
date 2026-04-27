@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import "tailwindcss";
+
+:root {
+  --color-work: #DC2626;
+  --color-short-break: #059669;
+  --color-long-break: #2563EB;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.pixel-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.phase-work { background-color: var(--color-work); }
+.phase-short-break { background-color: var(--color-short-break); }
+.phase-long-break { background-color: var(--color-long-break); }
+
+/* Pixel border effect */
+.pixel-border {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px currentColor;
+}
+
+/* Smooth phase transitions */
+.phase-transition {
+  transition: background-color 0.8s ease;
+}
+
+/* Button press effect */
+.pixel-btn:active {
+  transform: translateY(2px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
