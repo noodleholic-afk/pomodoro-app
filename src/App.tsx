@@ -191,7 +191,7 @@ export default function App() {
 
   async function handleLogin(email: string, password: string) {
     // Try to sign up first (in case user doesn't exist)
-    const { error: signUpError } = await supabase.auth.signUp({ email, password })
+    await supabase.auth.signUp({ email, password })
 
     // Then try to sign in (will succeed whether just signed up or already exists)
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
