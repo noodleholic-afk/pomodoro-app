@@ -1,48 +1,108 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* ── Imports must come first ── */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --color-work: #DC2626;
-  --color-short-break: #059669;
-  --color-long-break: #2563EB;
+/* ── Fonts ── */
+@font-face {
+  font-family: 'Zpix';
+  src: url('https://cdn.jsdelivr.net/gh/SolidZORO/zpix-pixel-font@master/dist/Zpix.ttf') format('truetype');
+  font-display: swap;
 }
+
+/* ── CSS Variables ── */
+:root {
+  --color-work:        #DC2626;
+  --color-short-break: #059669;
+  --color-long-break:  #2563EB;
+  --color-dark:        #1a1a2e;
+  --font-pixel: 'Press Start 2P', 'Zpix', 'Noto Sans SC', monospace;
+}
+
+/* ── Base ── */
+* { box-sizing: border-box; }
 
 body {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
   margin: 0;
   padding: 0;
+  background: var(--color-dark);
+  color: #fff;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ── Pixel grid overlay ── */
 .pixel-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-.phase-work { background-color: var(--color-work); }
+/* ── Phase backgrounds ── */
+.phase-work        { background-color: var(--color-work); }
 .phase-short-break { background-color: var(--color-short-break); }
-.phase-long-break { background-color: var(--color-long-break); }
+.phase-long-break  { background-color: var(--color-long-break); }
+.phase-dark        { background-color: var(--color-dark); }
+.phase-transition  { transition: background-color 0.8s ease; }
 
-/* Pixel border effect */
-.pixel-border {
-  box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px currentColor;
+/* ── Timer glow ── */
+.timer-glow {
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.7),
+    0 0 30px rgba(255,255,255,0.4),
+    0 0 60px rgba(255,255,255,0.2);
+}
+.timer-glow-pulse {
+  animation: pulse_glow 2s ease-in-out infinite;
 }
 
-/* Smooth phase transitions */
-.phase-transition {
-  transition: background-color 0.8s ease;
+@keyframes pulse_glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+  50%       { text-shadow: 0 0 24px rgba(255,255,255,1), 0 0 48px rgba(255,255,255,0.4); }
 }
 
-/* Button press effect */
-.pixel-btn:active {
-  transform: translateY(2px);
+/* ── Page fade-in ── */
+.page-fade {
+  animation: fadeIn 0.3s ease forwards;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Pixel buttons ── */
+.pixel-btn {
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+}
+.pixel-btn:hover  { transform: translateY(-1px); }
+.pixel-btn:active { transform: translateY(1px); }
+
+/* ── Input focus ── */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: rgba(255,255,255,0.8) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 2px; }
+
+/* ── Pixel border box ── */
+.pixel-box {
+  border: 3px solid rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* ── Section divider ── */
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 0;
+}
