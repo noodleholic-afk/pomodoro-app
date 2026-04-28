@@ -50,7 +50,7 @@ serve(async (req) => {
     }
 
     const { text } = await req.json()
-    const model = settings.ai_model || 'kimi-k2-turbo-preview'
+    const model = settings.ai_model || 'deepseek-ai/DeepSeek-V3.2'
     const fallbackModel = 'THUDM/glm-4-9b-chat'
 
     async function callAI(modelName: string) {

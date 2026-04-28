@@ -36,7 +36,7 @@ CREATE TABLE user_settings (
   notion_goodtime_db TEXT DEFAULT 'b6f8a0ec-a13d-43c6-879c-68dc8b153042',
   notion_para_db TEXT DEFAULT 'c3c35753-55bb-838e-9a9a-070004b77420',
   siliconflow_api_key TEXT,
-  ai_model TEXT DEFAULT 'kimi-k2-turbo-preview',
+  ai_model TEXT DEFAULT 'deepseek-ai/DeepSeek-V3.2',
   sound_enabled BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

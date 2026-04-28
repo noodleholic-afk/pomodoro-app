@@ -7,17 +7,19 @@ interface Props {
   onBack: () => void
   isLoggedIn: boolean
   userEmail: string | null
-  onLogin: (email: string) => void
+  onLogin: (email: string, password: string) => void
   onLogout: () => void
 }
 
 export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLogin, onLogout }: Props) {
   const [notionToken, setNotionToken] = useState(settings.notion_token || '')
   const [siliconflowKey, setSiliconflowKey] = useState(settings.siliconflow_api_key || '')
-  const [aiModel, setAiModel] = useState(settings.ai_model || 'kimi-k2-turbo-preview')
+  const [aiModel, setAiModel] = useState(settings.ai_model || 'deepseek-ai/DeepSeek-V3.2')
   const [soundEnabled, setSoundEnabled] = useState(settings.sound_enabled ?? true)
   const [email, setEmail] = useState('')
-  const [loginSent, setLoginSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   useEffect(() => {
     setNotionToken(settings.notion_token || '')
@@ -27,9 +29,21 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
   }, [settings])
 
   async function handleLogin() {
-    if (!email.trim()) return
-    onLogin(email.trim())
-    setLoginSent(true)
+    const e = email.trim()
+    const p = password.trim()
+    if (!e || !p) {
+      setLoginError('邮箱和密码都是必填的')
+      return
+    }
+    setLoginLoading(true)
+    setLoginError(null)
+    try {
+      await onLogin(e, p)
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : '登录失败')
+    } finally {
+      setLoginLoading(false)
+    }
   }
 
   function handleSave() {
@@ -57,24 +71,33 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
               <p className="text-white/70 text-xs">{userEmail}</p>
               <button onClick={onLogout} className="text-red-400/70 text-xs hover:text-red-400 pixel-btn">退出</button>
             </div>
-          ) : loginSent ? (
-            <p className="text-green-400/70 text-xs">Magic link 已发送至 {email}，请检查邮箱</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-white/40 text-xs">登录后可跨设备同步番茄进度</p>
-              <div className="flex gap-2">
-                <input
-                  className="flex-1 bg-white/5 border border-white/20 px-3 py-2 text-white text-xs outline-none font-pixel placeholder-white/30"
-                  placeholder="邮箱地址"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                />
-                <button onClick={handleLogin} className="px-3 py-2 border border-white/40 text-white/70 text-xs pixel-btn hover:text-white">
-                  发送
-                </button>
-              </div>
+              <p className="text-white/40 text-xs">邮箱和密码登录，跨设备同步番茄进度</p>
+              <input
+                className="w-full bg-white/5 border border-white/20 px-3 py-2 text-white text-xs outline-none font-pixel placeholder-white/30"
+                placeholder="邮箱地址"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              />
+              <input
+                className="w-full bg-white/5 border border-white/20 px-3 py-2 text-white text-xs outline-none font-pixel placeholder-white/30"
+                placeholder="密码"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              />
+              {loginError && <p className="text-red-400/70 text-xs">{loginError}</p>}
+              <button
+                onClick={handleLogin}
+                disabled={loginLoading}
+                className="w-full py-2 border border-white/40 text-white/70 text-xs pixel-btn hover:text-white disabled:opacity-50"
+              >
+                {loginLoading ? '登录中...' : '登 录'}
+              </button>
             </div>
           )}
         </div>
