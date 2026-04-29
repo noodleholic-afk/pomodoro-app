@@ -21,12 +21,19 @@
 
 /* Prevent iOS Safari rubber-band scroll and address-bar resize glitches.
    position:fixed + overflow:hidden locks the viewport so the app feels
-   native when added to the home screen or running in standalone PWA mode. */
+   native when added to the home screen or running in standalone PWA mode.
+
+   env(safe-area-inset-*) ensures content doesn't overlap with Dynamic Island,
+   camera notch, or rounded corners on iPhone 14 Pro and newer. */
 html, body {
   height: 100%;
   width: 100%;
   overflow: hidden;
   position: fixed;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 body {
