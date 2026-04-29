@@ -74,7 +74,19 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
   }
 
   return (
-    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
+    <div
+      className="pixel-grid page-fade"
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        overflow: 'hidden',
+        ...FONT,
+      }}
+    >
 
       {/* ─── Header bar ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">

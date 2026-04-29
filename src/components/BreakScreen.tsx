@@ -58,8 +58,18 @@ export function BreakScreen({
 
   return (
     <div
-      className="min-h-screen pixel-grid page-fade flex flex-col"
-      style={{ background: 'var(--bg)', ...FONT, '--grid-color': isShort ? 'rgba(68,255,136,0.055)' : 'rgba(136,170,255,0.055)' } as React.CSSProperties}
+      className="pixel-grid page-fade"
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        overflow: 'hidden',
+        ...FONT,
+        '--grid-color': isShort ? 'rgba(68,255,136,0.055)' : 'rgba(136,170,255,0.055)',
+      } as React.CSSProperties}
     >
 
       {/* ─── Header ─── */}

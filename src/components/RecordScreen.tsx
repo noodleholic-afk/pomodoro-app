@@ -92,8 +92,18 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
 
   return (
     <div
-      className="min-h-screen pixel-grid page-fade flex flex-col"
-      style={{ background: 'var(--bg)', ...FONT, '--grid-color': 'rgba(204,68,68,0.07)' } as React.CSSProperties}
+      className="pixel-grid page-fade"
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        overflow: 'hidden',
+        ...FONT,
+        '--grid-color': 'rgba(204,68,68,0.07)',
+      } as React.CSSProperties}
     >
 
       {/* ─── Header ─── */}

@@ -92,8 +92,19 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
   }
 
   return (
-    <div className="min-h-screen page-fade overflow-y-auto" style={{ background: '#1a1a2e' }}>
-      <div className="max-w-md mx-auto px-4 py-8 space-y-6 font-pixel" style={FONT}>
+    <div
+      className="page-fade"
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#1a1a2e',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        overflow: 'hidden',
+      }}
+    >
+      <div className="max-w-md mx-auto px-4 py-8 space-y-6 overflow-y-auto" style={FONT}>
 
         {/* ─── Header ─── */}
         <div className="flex items-center gap-4">
