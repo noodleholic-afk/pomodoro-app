@@ -4,21 +4,17 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'Zpix', '"Noto Sans SC"', 'monospace'],
+        pixel: ['"Press Start 2P"', '"Noto Sans SC"', 'monospace'],
       },
       colors: {
-        work: '#DC2626',
-        'short-break': '#059669',
-        'long-break': '#2563EB',
-        dark: '#1a1a2e',
-      },
-      keyframes: {
-        fadeIn: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-        pulse_glow: { '0%,100%': { textShadow: '0 0 8px rgba(255,255,255,0.6)' }, '50%': { textShadow: '0 0 24px rgba(255,255,255,1), 0 0 48px rgba(255,255,255,0.4)' } },
-      },
-      animation: {
-        fadeIn: 'fadeIn 0.3s ease forwards',
-        pulse_glow: 'pulse_glow 2s ease-in-out infinite',
+        bg:    '#111320',
+        card:  '#14172e',
+        work:  '#cc4444',
+        'work-lo':  '#3a1010',
+        green: '#44ff88',
+        blue:  '#88aaff',
+        'short-break': '#44ff88',
+        'long-break':  '#88aaff',
       },
     },
   },

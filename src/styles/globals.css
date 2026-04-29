@@ -1,108 +1,98 @@
-/* ── Imports must come first ── */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap');
 @import "tailwindcss";
 
-/* ── Fonts ── */
-@font-face {
-  font-family: 'Zpix';
-  src: url('https://cdn.jsdelivr.net/gh/SolidZORO/zpix-pixel-font@master/dist/Zpix.ttf') format('truetype');
-  font-display: swap;
-}
-
-/* ── CSS Variables ── */
+/* ─── Design tokens ─── */
 :root {
-  --color-work:        #DC2626;
-  --color-short-break: #059669;
-  --color-long-break:  #2563EB;
-  --color-dark:        #1a1a2e;
-  --font-pixel: 'Press Start 2P', 'Zpix', 'Noto Sans SC', monospace;
+  --bg:          #111320;
+  --card:        #14172e;
+  --work-hi:     #cc4444;
+  --work-lo:     #3a1010;
+  --work-border: #aa3333;
+  --green:       #44ff88;
+  --green-dim:   #0a2818;
+  --blue:        #88aaff;
+  --blue-dim:    #0a1030;
+  --border:      rgba(255,255,255,0.12);
+  --font:        'Press Start 2P', 'Noto Sans SC', monospace;
 }
 
-/* ── Base ── */
-* { box-sizing: border-box; }
+/* ─── Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
-  font-family: var(--font-pixel);
-  margin: 0;
-  padding: 0;
-  background: var(--color-dark);
+  background: var(--bg);
   color: #fff;
-  overflow-x: hidden;
+  font-family: var(--font);
+  margin: 0;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-/* ── Pixel grid overlay ── */
+/* ─── 8×8 pixel grid ─── */
 .pixel-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 20px 20px;
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 8px 8px;
 }
 
-/* ── Phase backgrounds ── */
-.phase-work        { background-color: var(--color-work); }
-.phase-short-break { background-color: var(--color-short-break); }
-.phase-long-break  { background-color: var(--color-long-break); }
-.phase-dark        { background-color: var(--color-dark); }
-.phase-transition  { transition: background-color 0.8s ease; }
+/* ─── Animations ─── */
+@keyframes blink-task {
+  0%, 49% { opacity: 1; }
+  50%, 99% { opacity: 0.2; }
+}
+.blink-task { animation: blink-task 1.4s step-end infinite; }
 
-/* ── Timer glow ── */
-.timer-glow {
-  text-shadow:
-    0 0 10px rgba(255,255,255,0.7),
-    0 0 30px rgba(255,255,255,0.4),
-    0 0 60px rgba(255,255,255,0.2);
+@keyframes glow-white {
+  0%,100% { text-shadow: 0 0 8px rgba(255,255,255,.7), 0 0 20px rgba(255,255,255,.3); }
+  50%     { text-shadow: 0 0 18px #fff, 0 0 36px rgba(255,255,255,.5); }
 }
-.timer-glow-pulse {
-  animation: pulse_glow 2s ease-in-out infinite;
+@keyframes glow-green {
+  0%,100% { text-shadow: 0 0 8px rgba(68,255,136,.8), 0 0 20px rgba(68,255,136,.3); }
+  50%     { text-shadow: 0 0 18px #44ff88, 0 0 36px rgba(68,255,136,.5); }
 }
-
-@keyframes pulse_glow {
-  0%, 100% { text-shadow: 0 0 8px rgba(255,255,255,0.6); }
-  50%       { text-shadow: 0 0 24px rgba(255,255,255,1), 0 0 48px rgba(255,255,255,0.4); }
+@keyframes glow-blue {
+  0%,100% { text-shadow: 0 0 8px rgba(136,170,255,.8), 0 0 20px rgba(136,170,255,.3); }
+  50%     { text-shadow: 0 0 18px #88aaff, 0 0 36px rgba(136,170,255,.5); }
 }
-
-/* ── Page fade-in ── */
-.page-fade {
-  animation: fadeIn 0.3s ease forwards;
-}
+.glow-white { animation: glow-white 2s ease-in-out infinite; }
+.glow-green { animation: glow-green 2s ease-in-out infinite; }
+.glow-blue  { animation: glow-blue  2s ease-in-out infinite; }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.page-fade { animation: fadeIn 0.25s ease; }
 
-/* ── Pixel buttons ── */
-.pixel-btn {
-  font-family: var(--font-pixel);
+/* ─── Buttons ─── */
+.px-btn {
+  font-family: var(--font);
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  border-radius: 6px;
+  transition: transform 0.08s ease, opacity 0.15s ease;
   user-select: none;
 }
-.pixel-btn:hover  { transform: translateY(-1px); }
-.pixel-btn:active { transform: translateY(1px); }
+.px-btn:hover:not(:disabled)  { transform: translateY(-1px); opacity: 0.88; }
+.px-btn:active:not(:disabled) { transform: translateY(1px);  opacity: 1; }
+.px-btn:disabled { cursor: not-allowed; }
 
-/* ── Input focus ── */
-input:focus, textarea:focus, select:focus {
+/* ─── Inputs ─── */
+input, textarea, select {
+  font-family: var(--font);
+  background: rgba(255,255,255,0.05);
+  border: 2px solid var(--border);
+  color: #fff;
   outline: none;
-  border-color: rgba(255,255,255,0.8) !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
+  border-radius: 6px;
+  transition: border-color 0.15s;
 }
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(255,255,255,0.45);
+}
+::placeholder { color: rgba(255,255,255,0.25); }
 
-/* ── Scrollbar ── */
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 2px; }
-
-/* ── Pixel border box ── */
-.pixel-box {
-  border: 3px solid rgba(255,255,255,0.9);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.08);
-}
-
-/* ── Section divider ── */
-.section-divider {
-  border: none;
-  border-top: 1px solid rgba(255,255,255,0.12);
-  margin: 0;
-}
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }

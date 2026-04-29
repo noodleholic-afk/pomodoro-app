@@ -4,6 +4,7 @@ import { useTimer } from './hooks/useTimer'
 import { useSupabase } from './hooks/useSupabase'
 import { StartScreen } from './components/StartScreen'
 import { Timer } from './components/Timer'
+import { BreakScreen } from './components/BreakScreen'
 import { RecordScreen } from './components/RecordScreen'
 import { Settings } from './components/Settings'
 import type { Phase, RecordData, UserSettings, PomodoroSession } from './types'
@@ -165,6 +166,7 @@ export default function App() {
     if (urlParams.task_name) window.history.replaceState({}, '', '/')
   }
 
+  // ✓ SUBMIT on RecordScreen — save record then go to break
   function handleRecord(record: RecordData) {
     submitRecord(record)
     timer.startNextPhase(completedPomodoros)
@@ -172,33 +174,20 @@ export default function App() {
     setPendingRecord(null)
   }
 
-  function handleSkipRecord() {
-    if (pendingRecord) {
-      submitRecord({
-        task_name: pendingRecord.taskName,
-        task_id: pendingRecord.taskId || undefined,
-        area: pendingRecord.area || undefined,
-        duration: 25,
-        started_at: pendingRecord.startedAt || new Date().toISOString(),
-        interruptions_urgent: pendingRecord.urgentItems.map(i => i.text),
-        interruptions_memo: pendingRecord.memoItems.map(i => i.text),
-      })
-    }
-    timer.startNextPhase(completedPomodoros)
-    setScreen('timer')
+  // ↩ RESTART on RecordScreen — undo the last pomodoro count and go back to start
+  function handleBackFromRecord() {
+    setCompletedPomodoros(n => Math.max(0, n - 1))
+    timer.reset()
+    setScreen('start')
     setPendingRecord(null)
   }
 
   async function handleLogin(email: string, password: string) {
     // Try to sign up first (in case user doesn't exist)
     await supabase.auth.signUp({ email, password })
-
-    // Then try to sign in (will succeed whether just signed up or already exists)
+    // Then sign in (works whether just signed up or already existed)
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      throw signInError
-    }
+    if (signInError) throw signInError
   }
 
   async function handleLogout() {
@@ -212,6 +201,7 @@ export default function App() {
     setScreen(timer.data.state === 'idle' ? 'start' : 'timer')
   }
 
+  // ── Settings ──
   if (screen === 'settings') {
     return (
       <Settings
@@ -226,26 +216,28 @@ export default function App() {
     )
   }
 
+  // ── Record ──
   if (screen === 'record' && pendingRecord) {
     return (
       <RecordScreen
         timerData={pendingRecord}
         completedPomodoros={completedPomodoros}
         onSubmit={handleRecord}
-        onSkip={handleSkipRecord}
+        onBack={handleBackFromRecord}
       />
     )
   }
 
-  if (screen === 'timer' && timer.data.state !== 'idle') {
+  // ── Timer: work phase ──
+  if (screen === 'timer' && timer.data.state !== 'idle' && timer.data.phase === 'work') {
     return (
       <Timer
         data={timer.data}
         soundEnabled={soundEnabled}
+        completedPomodoros={completedPomodoros}
         onPause={timer.pause}
         onResume={timer.resume}
         onReset={() => { timer.reset(); setScreen('start') }}
-        onSkip={timer.skipBreak}
         onToggleSound={() => setSoundEnabled(v => !v)}
         onAddUrgent={timer.addUrgent}
         onAddMemo={timer.addMemo}
@@ -253,6 +245,23 @@ export default function App() {
     )
   }
 
+  // ── Timer: break phase ──
+  if (screen === 'timer' && timer.data.state !== 'idle' && timer.data.phase !== 'work') {
+    return (
+      <BreakScreen
+        data={timer.data}
+        soundEnabled={soundEnabled}
+        completedPomodoros={completedPomodoros}
+        onPause={timer.pause}
+        onResume={timer.resume}
+        onReset={() => { timer.reset(); setScreen('start') }}
+        onSkip={timer.skipBreak}
+        onToggleSound={() => setSoundEnabled(v => !v)}
+      />
+    )
+  }
+
+  // ── Start ──
   return (
     <StartScreen
       prefillTask={urlParams.task_name}
@@ -260,6 +269,7 @@ export default function App() {
       prefillTaskId={urlParams.task_id}
       onStart={handleStart}
       onOpenSettings={() => setScreen('settings')}
+      completedPomodoros={completedPomodoros}
     />
   )
 }

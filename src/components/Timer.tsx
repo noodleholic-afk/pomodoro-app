@@ -1,39 +1,29 @@
 import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
-import { ProgressBar } from './ProgressBar'
 
 interface Props {
   data: TimerData
   soundEnabled: boolean
+  completedPomodoros: number
   onPause: () => void
   onResume: () => void
-  onReset: () => void
-  onSkip: () => void
+  onReset: () => void      // "放弃" — back to start
   onToggleSound: () => void
   onAddUrgent: (text: string) => void
   onAddMemo: (text: string) => void
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0')
-  const s = (seconds % 60).toString().padStart(2, '0')
-  return `${m}:${s}`
+const FONT = { fontFamily: 'var(--font)' }
+const C    = { background: 'var(--card)' }
+
+function fmt(s: number) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0')
+  const sec = (s % 60).toString().padStart(2, '0')
+  return `${m}:${sec}`
 }
 
-const PHASE_BG: Record<string, string> = {
-  work:          'bg-work',
-  'short-break': 'bg-short-break',
-  'long-break':  'bg-long-break',
-}
-
-const PHASE_LABEL: Record<string, string> = {
-  work:          'FOCUS TIME',
-  'short-break': 'SHORT BREAK',
-  'long-break':  'LONG BREAK',
-}
-
-/* ── Inline interruption panel (side-by-side) ── */
-function InlineInterruption({
+/* ── Inline side-by-side interruption input ── */
+function WorkInterruption({
   urgentItems, memoItems, onAddUrgent, onAddMemo,
 }: {
   urgentItems: { id: string; text: string }[]
@@ -41,98 +31,81 @@ function InlineInterruption({
   onAddUrgent: (t: string) => void
   onAddMemo:   (t: string) => void
 }) {
-  const [urgentOpen, setUrgentOpen] = useState(false)
-  const [memoOpen,   setMemoOpen]   = useState(false)
+  const [urgentOpen,  setUrgentOpen]  = useState(false)
+  const [memoOpen,    setMemoOpen]    = useState(false)
   const [urgentInput, setUrgentInput] = useState('')
   const [memoInput,   setMemoInput]   = useState('')
 
-  function submitUrgent() {
-    const t = urgentInput.trim()
+  function submit(value: string, add: (t: string) => void, clear: () => void) {
+    const t = value.trim()
     if (!t) return
-    onAddUrgent(t)
-    setUrgentInput('')
+    add(t)
+    clear()
   }
 
-  function submitMemo() {
-    const t = memoInput.trim()
-    if (!t) return
-    onAddMemo(t)
-    setMemoInput('')
+  const half: React.CSSProperties = {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    border: '2px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    ...C,
   }
 
   return (
-    <div className="flex gap-0 border border-white/20 overflow-hidden text-xs"
-         style={{ fontFamily: 'var(--font-pixel)' }}>
-
+    <div style={{ display: 'flex', gap: 8 }}>
       {/* Urgent */}
-      <div className="flex-1 border-r border-white/20">
+      <div style={half}>
         <button
+          className="px-btn"
           onClick={() => setUrgentOpen(o => !o)}
-          className="pixel-btn w-full flex items-center justify-between px-3 py-2 text-white/70 hover:text-white"
+          style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
-          <span>
-            🚨 <span className="ml-1">紧急</span>
-            {urgentItems.length > 0 && (
-              <span className="ml-1 text-yellow-300">({urgentItems.length})</span>
-            )}
-          </span>
-          <span className="text-white/40 text-xs">{urgentOpen ? '▲' : '▼'}</span>
+          <span>🚨 <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : '紧急'}</span></span>
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{urgentOpen ? '▲' : '▼'}</span>
         </button>
         {urgentOpen && (
-          <div className="px-3 pb-3 space-y-1.5">
+          <div style={{ padding: '0 8px 8px' }}>
             {urgentItems.map(i => (
-              <p key={i.id} className="text-white/50 text-xs border-l border-white/20 pl-2 leading-relaxed">{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4 }}>{i.text}</p>
             ))}
-            <div className="flex gap-1 mt-2">
+            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                className="flex-1 bg-white/10 border border-white/20 px-2 py-1 text-white text-xs placeholder-white/30"
-                style={{ fontFamily: 'var(--font-pixel)', outline: 'none' }}
+                style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="记录..."
                 value={urgentInput}
                 onChange={e => setUrgentInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitUrgent()}
+                onKeyDown={e => e.key === 'Enter' && submit(urgentInput, onAddUrgent, () => setUrgentInput(''))}
               />
-              <button
-                onClick={submitUrgent}
-                className="pixel-btn px-2 py-1 bg-white/15 hover:bg-white/25 text-white"
-              >+</button>
+              <button className="px-btn" onClick={() => submit(urgentInput, onAddUrgent, () => setUrgentInput(''))}
+                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10 }}>+</button>
             </div>
           </div>
         )}
       </div>
 
       {/* Memo */}
-      <div className="flex-1">
+      <div style={half}>
         <button
+          className="px-btn"
           onClick={() => setMemoOpen(o => !o)}
-          className="pixel-btn w-full flex items-center justify-between px-3 py-2 text-white/70 hover:text-white"
+          style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
-          <span>
-            📌 <span className="ml-1">备忘</span>
-            {memoItems.length > 0 && (
-              <span className="ml-1 text-yellow-300">({memoItems.length})</span>
-            )}
-          </span>
-          <span className="text-white/40 text-xs">{memoOpen ? '▲' : '▼'}</span>
+          <span>📌 <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : '备忘'}</span></span>
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{memoOpen ? '▲' : '▼'}</span>
         </button>
         {memoOpen && (
-          <div className="px-3 pb-3 space-y-1.5">
+          <div style={{ padding: '0 8px 8px' }}>
             {memoItems.map(i => (
-              <p key={i.id} className="text-white/50 text-xs border-l border-white/20 pl-2 leading-relaxed">{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4 }}>{i.text}</p>
             ))}
-            <div className="flex gap-1 mt-2">
+            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                className="flex-1 bg-white/10 border border-white/20 px-2 py-1 text-white text-xs placeholder-white/30"
-                style={{ fontFamily: 'var(--font-pixel)', outline: 'none' }}
+                style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="记录..."
                 value={memoInput}
                 onChange={e => setMemoInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitMemo()}
+                onKeyDown={e => e.key === 'Enter' && submit(memoInput, onAddMemo, () => setMemoInput(''))}
               />
-              <button
-                onClick={submitMemo}
-                className="pixel-btn px-2 py-1 bg-white/15 hover:bg-white/25 text-white"
-              >+</button>
+              <button className="px-btn" onClick={() => submit(memoInput, onAddMemo, () => setMemoInput(''))}
+                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10 }}>+</button>
             </div>
           </div>
         )}
@@ -141,138 +114,151 @@ function InlineInterruption({
   )
 }
 
-export function Timer({
-  data, soundEnabled,
-  onPause, onResume, onReset, onSkip, onToggleSound,
-  onAddUrgent, onAddMemo,
-}: Props) {
-  const [confirmReset, setConfirmReset] = useState(false)
-  const isBreak   = data.phase !== 'work'
+export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResume, onReset, onToggleSound, onAddUrgent, onAddMemo }: Props) {
   const isRunning = data.state === 'running'
 
+  // 4 pomodoro progress blocks
+  const cyclePos = completedPomodoros % 4  // position in current cycle (0-3)
+
   return (
-    <div
-      className={`min-h-screen ${PHASE_BG[data.phase]} pixel-grid phase-transition page-fade flex flex-col font-pixel`}
-      style={{ fontFamily: 'var(--font-pixel)' }}
-    >
-      {/* ─── Top bar: phase label + tomato count ─── */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2">
-        <span className="text-white/70 text-xs tracking-widest">{PHASE_LABEL[data.phase]}</span>
-        <div className="flex gap-1">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <span
-              key={i}
-              className="text-base transition-opacity"
-              style={{ opacity: i < data.completedCount ? 1 : 0.2 }}
-            >🍅</span>
-          ))}
+    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
+
+      {/* ─── Header ─── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🍅</span>
+          <span style={{ color: 'var(--work-hi)', fontSize: 10, ...FONT }}>WORK</span>
         </div>
+        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>25分</span>
       </div>
 
-      {/* ─── Center: task name + countdown ─── */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-5 px-5">
+      <div className="flex-1 flex flex-col px-4 pb-5 gap-3 max-w-md mx-auto w-full">
 
-        {/* Task name */}
+        {/* ─── 4 progress blocks ─── */}
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '4px 0' }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} style={{
+              width: 28, height: 14, borderRadius: 3,
+              background: i < cyclePos ? 'var(--work-hi)' : i === cyclePos ? '#884444' : '#2a0808',
+              border: `2px solid ${i < cyclePos ? '#ff6666' : i === cyclePos ? 'var(--work-border)' : '#3a1010'}`,
+              boxShadow: i < cyclePos ? '0 0 6px rgba(204,68,68,0.5)' : 'none',
+              transition: 'all 0.3s',
+            }} />
+          ))}
+        </div>
+
+        {/* ─── Task name (blinking border) ─── */}
         {data.taskName && (
-          <p
-            className="text-white text-xs text-center max-w-xs leading-relaxed"
-            style={{ textShadow: '0 0 12px rgba(255,255,255,0.5)', fontWeight: 700 }}
-          >
+          <div className="blink-task" style={{
+            border: '2px solid var(--work-border)',
+            borderRadius: 6, padding: '10px 14px',
+            background: 'rgba(170,51,51,0.12)',
+            ...FONT, fontSize: 11, color: '#ffaaaa',
+            textAlign: 'center', letterSpacing: '0.05em',
+          }}>
             {data.taskName}
-          </p>
+          </div>
         )}
 
-        {/* Timer box */}
-        <div
-          className="pixel-box px-8 py-5 text-center"
-          style={{ background: 'rgba(0,0,0,0.15)' }}
-        >
+        {/* ─── Timer display ─── */}
+        <div style={{
+          background: '#060810',
+          border: `3px solid var(--work-border)`,
+          borderRadius: 8, padding: '20px 12px',
+          textAlign: 'center', position: 'relative',
+        }}>
+          {/* corner dots */}
+          {[[-1,-1],[1,-1],[-1,1],[1,1]].map(([x,y], i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              width: 5, height: 5, borderRadius: 1,
+              background: 'var(--work-hi)',
+              top: x < 0 ? 5 : undefined, bottom: x > 0 ? 5 : undefined,
+              left: y < 0 ? 5 : undefined, right: y > 0 ? 5 : undefined,
+            }} />
+          ))}
           <span
-            className={`text-white tabular-nums ${isRunning ? 'timer-glow-pulse' : 'timer-glow'}`}
-            style={{ fontSize: 'clamp(3rem, 15vw, 5rem)', letterSpacing: '0.05em', fontFamily: "'Press Start 2P', monospace" }}
+            className={isRunning ? 'glow-white' : ''}
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 'clamp(2.8rem, 14vw, 4.5rem)',
+              color: '#fff',
+              letterSpacing: '0.06em',
+              display: 'block',
+              textShadow: isRunning ? undefined : '0 0 8px rgba(255,255,255,0.4)',
+            }}
           >
-            {formatTime(data.remaining)}
+            {fmt(data.remaining)}
           </span>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full max-w-xs">
-          <ProgressBar remaining={data.remaining} total={data.totalSeconds} />
+        {/* ─── Progress bar ─── */}
+        <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 3, height: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
+          <div style={{
+            height: '100%', background: 'var(--work-hi)',
+            borderRadius: 3, transition: 'width 1s linear',
+            width: `${data.totalSeconds > 0 ? ((data.totalSeconds - data.remaining) / data.totalSeconds) * 100 : 0}%`,
+            boxShadow: '0 0 8px rgba(204,68,68,0.6)',
+          }} />
         </div>
-      </div>
 
-      {/* ─── Bottom controls ─── */}
-      <div className="px-5 pb-6 space-y-3 max-w-md mx-auto w-full">
+        {/* ─── Interruption inputs ─── */}
+        <WorkInterruption
+          urgentItems={data.urgentItems}
+          memoItems={data.memoItems}
+          onAddUrgent={onAddUrgent}
+          onAddMemo={onAddMemo}
+        />
 
-        {/* Control buttons */}
-        <div className="flex gap-2">
-          {/* Pause / Resume */}
+        {/* ─── Controls ─── */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+          {/* PAUSE / RESUME — flex:2 */}
           <button
             onClick={isRunning ? onPause : onResume}
-            className="pixel-btn flex-1 py-4 border-2 border-white bg-white/10 text-white text-xs hover:bg-white/20"
-            style={{ fontFamily: 'var(--font-pixel)' }}
+            className="px-btn"
+            style={{
+              ...FONT, flex: 2, padding: '14px 0',
+              border: '2px solid var(--work-border)',
+              borderRadius: 8, fontSize: 11,
+              background: 'var(--work-lo)', color: '#ff8888',
+              boxShadow: '0 0 10px rgba(170,51,51,0.3)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            }}
           >
-            {isRunning ? 'PAUSE' : 'RESUME'}
+            <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
+            <span style={{ fontSize: 6, color: 'rgba(255,100,100,0.6)' }}>{isRunning ? '暂停' : '继续'}</span>
           </button>
-
-          {/* Skip — only during breaks */}
-          {isBreak && (
-            <button
-              onClick={onSkip}
-              className="pixel-btn flex-1 py-4 border-2 border-white/50 text-white/70 text-xs hover:border-white hover:text-white"
-              style={{ fontFamily: 'var(--font-pixel)' }}
-            >
-              SKIP
-            </button>
-          )}
-
-          {/* Reset */}
-          {confirmReset ? (
-            <>
-              <button
-                onClick={() => { onReset(); setConfirmReset(false) }}
-                className="pixel-btn px-3 py-4 border-2 border-yellow-400 text-yellow-400 text-xs hover:bg-yellow-400/10"
-                style={{ fontFamily: 'var(--font-pixel)' }}
-              >
-                OK
-              </button>
-              <button
-                onClick={() => setConfirmReset(false)}
-                className="pixel-btn px-3 py-4 border-2 border-white/30 text-white/40 text-xs"
-                style={{ fontFamily: 'var(--font-pixel)' }}
-              >
-                ✕
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setConfirmReset(true)}
-              className="pixel-btn px-4 py-4 border-2 border-white/30 text-white/50 text-xs hover:border-white/60 hover:text-white/70"
-              style={{ fontFamily: 'var(--font-pixel)' }}
-            >
-              RESET
-            </button>
-          )}
 
           {/* Sound toggle */}
           <button
             onClick={onToggleSound}
-            className="pixel-btn px-3 py-4 border-2 border-white/30 text-base hover:border-white/60"
-            title={soundEnabled ? '静音' : '开启声音'}
+            className="px-btn"
+            style={{
+              padding: '14px 12px', fontSize: 16,
+              border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
+              background: 'rgba(255,255,255,0.05)', color: soundEnabled ? '#fff' : 'rgba(255,255,255,0.3)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            }}
           >
-            {soundEnabled ? '🔊' : '🔇'}
+            <span>{soundEnabled ? '🔊' : '🔇'}</span>
+            <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
+          </button>
+
+          {/* Abandon / X */}
+          <button
+            onClick={onReset}
+            className="px-btn"
+            style={{
+              ...FONT, padding: '14px 12px',
+              border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
+              background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
+              fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            }}
+          >
+            <span>✕</span>
+            <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>ABANDON</span>
           </button>
         </div>
-
-        {/* Interruption panels — only during work */}
-        {!isBreak && (
-          <InlineInterruption
-            urgentItems={data.urgentItems}
-            memoItems={data.memoItems}
-            onAddUrgent={onAddUrgent}
-            onAddMemo={onAddMemo}
-          />
-        )}
       </div>
     </div>
   )

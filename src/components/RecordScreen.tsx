@@ -1,121 +1,66 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { RecordData, AIParseResult } from '../types'
+import type { RecordData } from '../types'
 import type { TimerData } from '../hooks/useTimer'
 
 interface Props {
   timerData: TimerData
   completedPomodoros: number
   onSubmit: (record: RecordData) => void
-  onSkip: () => void
+  onBack: () => void   // ↩ RESTART — decrement count + go to start
 }
 
-type RecordType     = '专注' | '学习' | '行政' | '复盘'
-type EnergyType     = '↑ 上升' | '→ 持平' | '↓ 下降'
-type InterruptType  = '无' | '内部' | '外部'
-type SceneType      = '🏠 在家' | '☕ 公共空间' | '👥 有人陪' | '🚶 外出独处'
+type EnergyType = '↑ UP' | '→ FLAT' | '↓ DOWN'
+type SceneType  = '🏠 HOME' | '☕ CAFÉ' | '👥 SOCIAL' | '🚶 OUT'
 
-const FONT = { fontFamily: 'var(--font-pixel)' }
+const FONT = { fontFamily: 'var(--font)' }
+const C    = { background: 'var(--card)' }
 
-function ToggleBtn({ value, selected, onClick }: { value: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={FONT}
-      className={`pixel-btn px-3 py-2 border text-xs transition-all ${
-        selected
-          ? 'border-white bg-white text-gray-900'
-          : 'border-white/30 text-white/60 hover:border-white/70 hover:text-white bg-white/5'
-      }`}
-    >
-      {value}
-    </button>
-  )
-}
-
-function NumBtn({ value, selected, onClick }: { value: number; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={FONT}
-      className={`pixel-btn w-11 h-11 border text-xs transition-all ${
-        selected
-          ? 'border-white bg-white text-gray-900'
-          : 'border-white/30 text-white/60 hover:border-white/70 hover:text-white bg-white/5'
-      }`}
-    >
-      {value}
-    </button>
-  )
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-white/40 text-xs mb-2" style={FONT}>{children}</p>
-}
-
-export function RecordScreen({ timerData, onSubmit, onSkip }: Props) {
-  const [voiceInput,  setVoiceInput]  = useState('')
-  const [aiLoading,   setAiLoading]   = useState(false)
-  const [aiError,     setAiError]     = useState<string | null>(null)
-  const [isListening, setIsListening] = useState(false)
-
-  const [type,        setType]        = useState<RecordType | null>(null)
-  const [engagement,  setEngagement]  = useState<number | null>(null)
-  const [energy,      setEnergy]      = useState<EnergyType | null>(null)
-  const [interruption,setInterruption]= useState<InterruptType | null>(null)
-  const [scene,       setScene]       = useState<SceneType | null>(null)
-  const [resultNote,  setResultNote]  = useState('')
-  const [trigger,     setTrigger]     = useState('')
-
-  function applyAIResult(r: AIParseResult) {
-    if (r.type)        setType(r.type)
-    if (r.engagement)  setEngagement(r.engagement)
-    if (r.energy)      setEnergy(r.energy)
-    if (r.interruption)setInterruption(r.interruption)
-    if (r.scene)       setScene(r.scene)
-    if (r.result_note) setResultNote(r.result_note)
-    if (r.trigger)     setTrigger(r.trigger)
-  }
+export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }: Props) {
+  const [whatDone,   setWhatDone]   = useState('')
+  const [focus,      setFocus]      = useState<number | null>(null)
+  const [showDetail, setShowDetail] = useState(false)
+  const [feeling,    setFeeling]    = useState('')
+  const [scene,      setScene]      = useState<SceneType | null>(null)
+  const [energy,     setEnergy]     = useState<EnergyType | null>(null)
+  const [aiInput,    setAiInput]    = useState('')
+  const [aiLoading,  setAiLoading]  = useState(false)
 
   async function handleAIParse() {
-    const text = voiceInput.trim()
-    if (!text) return
+    const text = aiInput.trim()
+    if (!text || aiLoading) return
     setAiLoading(true)
-    setAiError(null)
     try {
-      const { data, error } = await supabase.functions.invoke('ai-parse', { body: { text } })
-      if (error) throw error
-      applyAIResult(data as AIParseResult)
-    } catch {
-      setAiError('AI 解析失败，请手动选择')
-    } finally {
+      const { data } = await supabase.functions.invoke('ai-parse', { body: { text } })
+      if (data?.result_note) setWhatDone(data.result_note)
+      if (data?.engagement)  setFocus(data.engagement)
+      if (data?.energy) {
+        const map: Record<string, EnergyType> = {
+          '↑ 上升': '↑ UP', '→ 持平': '→ FLAT', '↓ 下降': '↓ DOWN',
+        }
+        setEnergy(map[data.energy] ?? null)
+      }
+    } catch { /* silent */ } finally {
       setAiLoading(false)
     }
   }
 
-  function startVoice() {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) { alert('浏览器不支持语音输入'); return }
-    const rec = new SR()
-    rec.lang    = 'zh-CN'
-    rec.onstart = () => setIsListening(true)
-    rec.onend   = () => setIsListening(false)
-    rec.onresult = (e: any) => setVoiceInput(p => p + e.results[0][0].transcript)
-    rec.start()
-  }
-
   function handleSubmit() {
+    const energyMap: Record<EnergyType, string> = {
+      '↑ UP': '↑ 上升', '→ FLAT': '→ 持平', '↓ DOWN': '↓ 下降',
+    }
+    const sceneMap: Record<SceneType, string> = {
+      '🏠 HOME': '🏠 在家', '☕ CAFÉ': '☕ 公共空间',
+      '👥 SOCIAL': '👥 有人陪', '🚶 OUT': '🚶 外出独处',
+    }
     onSubmit({
       task_name: timerData.taskName,
       task_id:   timerData.taskId   || undefined,
       area:      timerData.area     || undefined,
-      type:      type               || undefined,
-      engagement:engagement         || undefined,
-      energy:    energy             || undefined,
-      interruption: interruption    || undefined,
-      scene:     scene              || undefined,
-      result_note: resultNote       || undefined,
-      trigger:   trigger            || undefined,
+      engagement: focus             || undefined,
+      energy:    energy ? (energyMap[energy] as any) : undefined,
+      scene:     scene  ? (sceneMap[scene]   as any) : undefined,
+      result_note: (whatDone || feeling) || undefined,
       duration:  25,
       started_at: timerData.startedAt || new Date().toISOString(),
       interruptions_urgent: timerData.urgentItems.map(i => i.text),
@@ -123,162 +68,213 @@ export function RecordScreen({ timerData, onSubmit, onSkip }: Props) {
     })
   }
 
-  const allUrgent = timerData.urgentItems
-  const allMemo   = timerData.memoItems
-
   return (
-    <div className="min-h-screen page-fade overflow-y-auto" style={{ background: '#1a1a2e' }}>
-      <div className="max-w-md mx-auto px-4 py-8 space-y-6 font-pixel" style={FONT}>
+    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
 
-        {/* ─── Header ─── */}
-        <div className="text-center space-y-2 pb-2">
-          <div className="text-5xl">🍅</div>
-          <h2 className="text-white text-sm tracking-widest" style={FONT}>番茄完成！</h2>
-          <p className="text-white/50 text-xs leading-relaxed" style={FONT}>{timerData.taskName}</p>
+      {/* ─── Header ─── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🍅</span>
+          <span style={{ color: 'var(--work-hi)', fontSize: 10, ...FONT }}>RECORD</span>
+        </div>
+        {completedPomodoros > 0 && (
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>#{completedPomodoros}</span>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col px-4 pb-5 gap-3 max-w-md mx-auto w-full overflow-y-auto">
+
+        {/* ─── Task name ─── */}
+        <div style={{
+          border: '2px solid var(--work-border)',
+          borderRadius: 6, padding: '10px 14px',
+          background: 'rgba(170,51,51,0.12)',
+          ...FONT, fontSize: 11, color: '#ffaaaa',
+          textAlign: 'center',
+        }}>
+          {timerData.taskName}
         </div>
 
-        <hr className="section-divider" />
+        {/* ─── WHAT DID YOU DO ─── */}
+        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
+          <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>✍️ WHAT DID YOU DO</p>
+          <textarea
+            style={{
+              ...FONT, fontSize: 10, color: '#fff',
+              background: 'transparent', border: 'none', outline: 'none',
+              resize: 'none', width: '100%',
+            }}
+            rows={3}
+            placeholder="..."
+            value={whatDone}
+            onChange={e => setWhatDone(e.target.value)}
+          />
+        </div>
 
-        {/* ─── AI parse ─── */}
-        <div className="space-y-3 border border-white/10 p-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
-          <p className="text-white/50 text-xs" style={FONT}>🤖 说一句话，AI 自动解析</p>
-          <div className="flex gap-2">
-            <input
-              style={{ ...FONT, outline: 'none' }}
-              className="flex-1 bg-white/5 border border-white/20 px-3 py-2 text-white text-xs placeholder-white/25"
-              placeholder="描述这段时间做了什么..."
-              value={voiceInput}
-              onChange={e => setVoiceInput(e.target.value)}
-            />
-            <button
-              onClick={startVoice}
-              className={`pixel-btn px-3 border text-base ${
-                isListening
-                  ? 'border-red-400 text-red-400'
-                  : 'border-white/30 text-white/50 hover:border-white hover:text-white'
-              }`}
-            >
-              {isListening ? '◉' : '🎤'}
-            </button>
+        {/* ─── FOCUS stars ─── */}
+        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
+          <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>⚡ FOCUS</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[1,2,3,4,5].map(v => (
+              <button
+                key={v}
+                onClick={() => setFocus(focus === v ? null : v)}
+                className="px-btn"
+                style={{
+                  fontFamily: 'serif', fontSize: 24,
+                  color: v <= (focus ?? 0) ? '#ffcc44' : 'rgba(255,255,255,0.2)',
+                  background: 'transparent', border: 'none', padding: '2px 4px',
+                  transition: 'color 0.15s',
+                }}
+              >
+                {v <= (focus ?? 0) ? '★' : '☆'}
+              </button>
+            ))}
           </div>
+        </div>
+
+        {/* ─── GOOD TIME LOG (collapsible) ─── */}
+        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, ...C, overflow: 'hidden' }}>
           <button
-            onClick={handleAIParse}
-            disabled={!voiceInput.trim() || aiLoading}
-            style={FONT}
-            className="pixel-btn w-full py-2 border border-white/30 bg-white/5 text-white text-xs hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={() => setShowDetail(o => !o)}
+            className="px-btn"
+            style={{
+              ...FONT, width: '100%', display: 'flex', justifyContent: 'space-between',
+              alignItems: 'center', padding: '10px 12px',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              fontSize: 9, color: 'rgba(255,255,255,0.5)',
+            }}
           >
-            {aiLoading ? '解析中...' : '🤖 AI 解析'}
+            <span>🌟 GOOD TIME LOG</span>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 8 }}>{showDetail ? '▲' : '▼'}</span>
           </button>
-          {aiError && <p className="text-red-400/80 text-xs" style={FONT}>{aiError}</p>}
-        </div>
 
-        {/* ─── Manual form ─── */}
-        <div className="space-y-5">
+          {showDetail && (
+            <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Feeling */}
+              <div>
+                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>FEELING</p>
+                <input
+                  style={{
+                    ...FONT, fontSize: 9, color: '#fff',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 4, padding: '6px 8px', width: '100%', outline: 'none',
+                  }}
+                  placeholder="How did it feel?"
+                  value={feeling}
+                  onChange={e => setFeeling(e.target.value)}
+                />
+              </div>
 
-          {/* Type */}
-          <div>
-            <SectionLabel>类型</SectionLabel>
-            <div className="flex gap-2 flex-wrap">
-              {(['专注','学习','行政','复盘'] as RecordType[]).map(v => (
-                <ToggleBtn key={v} value={v} selected={type === v} onClick={() => setType(type === v ? null : v)} />
-              ))}
-            </div>
-          </div>
+              {/* Scene */}
+              <div>
+                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>SCENE</p>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(['🏠 HOME','☕ CAFÉ','👥 SOCIAL','🚶 OUT'] as SceneType[]).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setScene(scene === s ? null : s)}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 8, padding: '5px 8px', borderRadius: 4,
+                        border: `1px solid ${scene === s ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                        background: scene === s ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+                        color: scene === s ? '#fff' : 'rgba(255,255,255,0.5)',
+                      }}
+                    >{s}</button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Engagement */}
-          <div>
-            <SectionLabel>投入程度</SectionLabel>
-            <div className="flex gap-2">
-              {[1,2,3,4,5].map(v => (
-                <NumBtn key={v} value={v} selected={engagement === v} onClick={() => setEngagement(engagement === v ? null : v)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Energy */}
-          <div>
-            <SectionLabel>能量变化</SectionLabel>
-            <div className="flex gap-2 flex-wrap">
-              {(['↑ 上升','→ 持平','↓ 下降'] as EnergyType[]).map(v => (
-                <ToggleBtn key={v} value={v} selected={energy === v} onClick={() => setEnergy(energy === v ? null : v)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Trigger — only when energy changed */}
-          {(energy === '↑ 上升' || energy === '↓ 下降') && (
-            <div>
-              <SectionLabel>触发因素（因为...）</SectionLabel>
-              <input
-                style={{ ...FONT, outline: 'none' }}
-                className="w-full bg-white/5 border border-white/20 px-3 py-2 text-white text-xs placeholder-white/25"
-                placeholder="能量变化的原因..."
-                value={trigger}
-                onChange={e => setTrigger(e.target.value)}
-              />
+              {/* Energy */}
+              <div>
+                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>ENERGY</p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['↑ UP','→ FLAT','↓ DOWN'] as EnergyType[]).map(e => (
+                    <button
+                      key={e}
+                      onClick={() => setEnergy(energy === e ? null : e)}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 8, padding: '5px 10px', borderRadius: 4,
+                        border: `1px solid ${energy === e ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                        background: energy === e ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+                        color: energy === e ? '#fff' : 'rgba(255,255,255,0.5)',
+                      }}
+                    >{e}</button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Interruption */}
-          <div>
-            <SectionLabel>中断</SectionLabel>
-            <div className="flex gap-2">
-              {(['无','内部','外部'] as InterruptType[]).map(v => (
-                <ToggleBtn key={v} value={v} selected={interruption === v} onClick={() => setInterruption(interruption === v ? null : v)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Scene */}
-          <div>
-            <SectionLabel>场景</SectionLabel>
-            <div className="flex gap-2 flex-wrap">
-              {(['🏠 在家','☕ 公共空间','👥 有人陪','🚶 外出独处'] as SceneType[]).map(v => (
-                <ToggleBtn key={v} value={v} selected={scene === v} onClick={() => setScene(scene === v ? null : v)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Result note */}
-          <div>
-            <SectionLabel>结果一句话（可选）</SectionLabel>
-            <textarea
-              style={{ ...FONT, outline: 'none', resize: 'none' }}
-              className="w-full bg-white/5 border border-white/20 px-3 py-2 text-white text-xs placeholder-white/25"
-              rows={2}
-              placeholder="完成了什么？有什么进展？"
-              value={resultNote}
-              onChange={e => setResultNote(e.target.value)}
-            />
-          </div>
         </div>
 
-        {/* ─── Interruptions summary ─── */}
-        {(allUrgent.length > 0 || allMemo.length > 0) && (
-          <div className="border border-yellow-500/20 p-4 space-y-1.5" style={{ background: 'rgba(234,179,8,0.05)' }}>
-            <p className="text-yellow-400/60 text-xs mb-2" style={FONT}>休息时处理：</p>
-            {allUrgent.map(i => <p key={i.id} className="text-white/50 text-xs" style={FONT}>🚨 {i.text}</p>)}
-            {allMemo.map(i => <p key={i.id} className="text-white/50 text-xs" style={FONT}>📌 {i.text}</p>)}
+        {/* ─── AI PARSE ─── */}
+        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
+          <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>✨ AI PARSE</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              style={{
+                ...FONT, flex: 1, fontSize: 9, padding: '6px 8px', borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.06)', color: '#fff', outline: 'none',
+              }}
+              placeholder="Describe what you did..."
+              value={aiInput}
+              onChange={e => setAiInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleAIParse()}
+            />
+            <button
+              onClick={handleAIParse}
+              disabled={!aiInput.trim() || aiLoading}
+              className="px-btn"
+              style={{
+                ...FONT, fontSize: 9, padding: '6px 14px', borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.06)',
+                color: aiLoading ? 'rgba(255,255,255,0.3)' : '#fff',
+              }}
+            >
+              {aiLoading ? '...' : '→'}
+            </button>
           </div>
-        )}
+        </div>
 
         {/* ─── Action buttons ─── */}
-        <div className="flex gap-3 pb-8">
+        <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
+          {/* RESTART */}
+          <button
+            onClick={onBack}
+            className="px-btn"
+            style={{
+              ...FONT, flex: 1, padding: '14px 0',
+              border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
+              background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)',
+              fontSize: 10,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            }}
+          >
+            <span>↩ RESTART</span>
+          </button>
+
+          {/* SUBMIT */}
           <button
             onClick={handleSubmit}
-            style={FONT}
-            className="pixel-btn flex-1 py-4 border-2 border-white bg-white text-gray-900 text-xs hover:bg-white/90"
+            className="px-btn"
+            style={{
+              ...FONT, flex: 2, padding: '14px 0',
+              border: '2px solid var(--work-hi)', borderRadius: 8,
+              background: 'var(--work-lo)', color: '#ff8888',
+              fontSize: 11,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              boxShadow: '0 0 10px rgba(204,68,68,0.3)',
+            }}
           >
-            ✅ 完成并记录
-          </button>
-          <button
-            onClick={onSkip}
-            style={FONT}
-            className="pixel-btn flex-1 py-4 border-2 border-white/25 text-white/50 text-xs hover:border-white/50 hover:text-white/70"
-          >
-            ⏭ 跳过
+            <span>✓ SUBMIT</span>
           </button>
         </div>
+
       </div>
     </div>
   )

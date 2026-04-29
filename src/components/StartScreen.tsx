@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNotionTasks } from '../hooks/useNotionTasks'
+import { supabase } from '../lib/supabase'
 
 interface Props {
   prefillTask?: string
@@ -7,103 +8,137 @@ interface Props {
   prefillTaskId?: string
   onStart: (taskName: string, taskId: string, area: string) => void
   onOpenSettings: () => void
+  completedPomodoros: number
 }
 
-export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, onOpenSettings }: Props) {
-  const [taskName, setTaskName] = useState(prefillTask || '')
-  const [taskId, setTaskId]     = useState(prefillTaskId || '')
-  const [area, setArea]         = useState(prefillArea || '')
+const AREAS = [
+  { id: '求职',  emoji: '🔍', label: '求职' },
+  { id: '身心',  emoji: '💚', label: '身心' },
+  { id: '人生OS',emoji: '🪢', label: '人生OS' },
+  { id: '兼职',  emoji: '🏪', label: '兼职' },
+  { id: '财务',  emoji: '💰', label: '财务' },
+  { id: '生活',  emoji: '🏠', label: '生活' },
+  { id: '兴趣',  emoji: '💃', label: '兴趣' },
+  { id: '关系',  emoji: '👥', label: '关系' },
+  { id: '其他',  emoji: '📦', label: '其他', full: true },
+] as const
+
+const FONT = { fontFamily: 'var(--font)' }
+const C = { background: 'var(--card)' }
+
+export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, onOpenSettings, completedPomodoros }: Props) {
+  const [taskName,     setTaskName]     = useState(prefillTask    || '')
+  const [taskId,       setTaskId]       = useState(prefillTaskId  || '')
+  const [selectedArea, setSelectedArea] = useState(prefillArea    || '')
+  const [aiLoading,    setAiLoading]    = useState(false)
+
   const { tasks, loading, fetchTasks } = useNotionTasks()
 
   useEffect(() => { fetchTasks() }, [])
 
   const canStart = taskName.trim().length > 0
 
-  function handleStart() {
-    if (!canStart) return
-    onStart(taskName.trim(), taskId, area)
-  }
-
   function selectTask(task: { id: string; name: string; area: string }) {
     setTaskName(task.name)
     setTaskId(task.id)
-    setArea(task.area)
+    // Try to auto-select area button
+    const match = AREAS.find(a => task.area.includes(a.label) || task.area.includes(a.emoji))
+    if (match) setSelectedArea(match.label)
+    else if (task.area) setSelectedArea(task.area)
   }
 
-  function handleManualInput(value: string) {
-    setTaskName(value)
-    setTaskId('')
-    setArea('')
+  function toggleArea(label: string) {
+    setSelectedArea(prev => prev === label ? '' : label)
+  }
+
+  async function handleAI() {
+    const text = taskName.trim()
+    if (!text || aiLoading) return
+    setAiLoading(true)
+    try {
+      const { data } = await supabase.functions.invoke('ai-parse', { body: { text } })
+      if (data?.task_name) setTaskName(data.task_name)
+    } catch { /* silent */ } finally {
+      setAiLoading(false)
+    }
+  }
+
+  function handleStart() {
+    if (!canStart) return
+    const areaStr = AREAS.find(a => a.label === selectedArea)
+      ? `${AREAS.find(a => a.label === selectedArea)!.emoji} ${selectedArea}`
+      : selectedArea
+    onStart(taskName.trim(), taskId, areaStr)
+    if (prefillTask) window.history.replaceState({}, '', '/')
   }
 
   return (
-    <div className="min-h-screen bg-work pixel-grid phase-transition page-fade flex flex-col p-5 font-pixel"
-         style={{ fontFamily: "var(--font-pixel)" }}>
+    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
 
-      {/* ─── Top bar ─── */}
-      <div className="flex justify-end">
-        <button
-          onClick={onOpenSettings}
-          className="pixel-btn text-white/50 hover:text-white text-base leading-none p-2"
-          title="设置"
-        >
-          ⚙
-        </button>
+      {/* ─── Header bar ─── */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🍅</span>
+          <span className="text-white/60 text-xs">POMO</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {completedPomodoros > 0 && (
+            <span className="text-white/40 text-xs">#{completedPomodoros}</span>
+          )}
+          <button onClick={onOpenSettings} className="px-btn text-white/40 hover:text-white text-base">⚙</button>
+        </div>
       </div>
 
-      {/* ─── Main content ─── */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-8 max-w-md mx-auto w-full">
+      <div className="flex-1 flex flex-col px-4 pb-6 gap-4 overflow-y-auto max-w-md mx-auto w-full">
 
-        {/* Logo */}
-        <div className="text-center">
-          <div className="text-7xl mb-4 drop-shadow-lg">🍅</div>
-          <h1 className="text-white text-base tracking-widest">POMODORO</h1>
-          <p className="text-white/40 text-xs mt-2">专注一件事</p>
+        {/* ─── Area grid ─── */}
+        <div className="rounded-lg border border-white/10 p-3" style={C}>
+          <p className="text-white/40 text-xs mb-2" style={FONT}>领域</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {AREAS.map(area => (
+              <button
+                key={area.id}
+                onClick={() => toggleArea(area.label)}
+                style={{
+                  ...FONT,
+                  gridColumn: 'full' in area ? '1 / -1' : undefined,
+                  background: selectedArea === area.label ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
+                  border: `2px solid ${selectedArea === area.label ? 'var(--work-hi)' : 'rgba(255,255,255,0.12)'}`,
+                  color: selectedArea === area.label ? '#ff8888' : 'rgba(255,255,255,0.65)',
+                  borderRadius: 6, padding: '8px 10px', textAlign: 'left',
+                  fontSize: 10, cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                className="px-btn"
+              >
+                {area.emoji} {area.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Manual input — always first */}
-        <div className="w-full space-y-3">
-          <input
-            className="pixel-btn w-full bg-transparent pixel-box px-4 py-3 text-white text-xs placeholder-white/40 focus:placeholder-white/20 transition-all"
-            style={{ fontFamily: "var(--font-pixel)" }}
-            placeholder="输入任务名称..."
-            value={taskName}
-            onChange={e => handleManualInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
-            autoFocus
-          />
-          {taskName.trim() && !taskId && (
-            <input
-              className="pixel-btn w-full bg-transparent border-2 border-white/30 px-4 py-3 text-white text-xs placeholder-white/30 transition-all"
-              style={{ fontFamily: "var(--font-pixel)" }}
-              placeholder="所属领域（可选）"
-              value={area}
-              onChange={e => setArea(e.target.value)}
-            />
-          )}
-        </div>
-
-        {/* Notion quick-select — only when loaded */}
+        {/* ─── Notion tasks ─── */}
         {(loading || tasks.length > 0) && (
-          <div className="w-full">
+          <div className="rounded-lg border border-white/10 p-3" style={C}>
+            <p className="text-white/40 text-xs mb-2" style={FONT}>Notion 任务</p>
             {loading ? (
-              <p className="text-white/30 text-xs text-center py-1">载入最近任务...</p>
+              <p className="text-white/25 text-xs py-1" style={FONT}>载入中...</p>
             ) : (
-              <div className="space-y-2">
-                <p className="text-white/40 text-xs mb-3">▸ 最近进行中的任务</p>
+              <div className="space-y-1.5">
                 {tasks.map(task => (
                   <button
                     key={task.id}
                     onClick={() => selectTask(task)}
-                    className={`pixel-btn w-full text-left px-4 py-3 border-2 text-xs transition-all ${
-                      taskId === task.id
-                        ? 'border-white bg-white/20 text-white'
-                        : 'border-white/30 bg-white/5 text-white/70 hover:border-white/70 hover:bg-white/10 hover:text-white'
-                    }`}
-                    style={{ fontFamily: "var(--font-pixel)" }}
+                    className="px-btn w-full text-left px-3 py-2 text-xs"
+                    style={{
+                      ...FONT,
+                      background: taskId === task.id ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
+                      border: `2px solid ${taskId === task.id ? 'var(--work-border)' : 'rgba(255,255,255,0.1)'}`,
+                      color: taskId === task.id ? '#ffaaaa' : 'rgba(255,255,255,0.7)',
+                      borderRadius: 6,
+                    }}
                   >
-                    <div className="font-medium truncate">{task.name}</div>
-                    {task.area && <div className="text-white/40 mt-0.5 text-xs">{task.area}</div>}
+                    <div className="truncate">{task.name}</div>
+                    {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, marginTop: 2 }}>{task.area}</div>}
                   </button>
                 ))}
               </div>
@@ -111,18 +146,45 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
           </div>
         )}
 
-        {/* START button */}
+        {/* ─── Manual input + AI button ─── */}
+        <div className="rounded-lg border border-white/10 p-3" style={C}>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 px-3 py-2 text-white text-xs"
+              style={{ ...FONT, borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)' }}
+              placeholder="手动输入任务名称..."
+              value={taskName}
+              onChange={e => { setTaskName(e.target.value); setTaskId('') }}
+              onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
+              autoFocus
+            />
+            <button
+              onClick={handleAI}
+              disabled={!taskName.trim() || aiLoading}
+              className="px-btn px-3 py-2 text-base"
+              style={{ border: '2px solid rgba(255,255,255,0.2)', borderRadius: 6, background: 'rgba(255,255,255,0.06)' }}
+              title="AI 识别"
+            >
+              {aiLoading ? '...' : '✨'}
+            </button>
+          </div>
+        </div>
+
+        {/* ─── START ─── */}
         <button
           onClick={handleStart}
           disabled={!canStart}
-          className={`pixel-btn w-full py-5 border-4 text-sm tracking-widest transition-all ${
-            canStart
-              ? 'border-white bg-white text-work hover:bg-white/90 hover:scale-[1.01]'
-              : 'border-white/20 bg-transparent text-white/20 cursor-not-allowed'
-          }`}
-          style={{ fontFamily: "var(--font-pixel)" }}
+          className="px-btn w-full py-4 text-sm tracking-widest"
+          style={{
+            ...FONT,
+            border: `3px solid ${canStart ? 'var(--work-hi)' : 'rgba(255,255,255,0.15)'}`,
+            background: canStart ? 'var(--work-lo)' : 'transparent',
+            color: canStart ? '#ff8888' : 'rgba(255,255,255,0.2)',
+            borderRadius: 8,
+            boxShadow: canStart ? '0 0 12px rgba(204,68,68,0.3)' : 'none',
+          }}
         >
-          START
+          ▶ START
         </button>
       </div>
     </div>
