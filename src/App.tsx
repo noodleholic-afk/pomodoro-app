@@ -28,52 +28,44 @@ function getURLParams() {
 /** Map camelCase TimerData delta to snake_case PomodoroSession columns */
 function toSessionRow(delta: any): Partial<PomodoroSession> {
   const row: any = {}
-  if (delta.phase         !== undefined) row.phase              = delta.phase
-  if (delta.totalSeconds  !== undefined) row.total_seconds      = delta.totalSeconds
-  if (delta.total_seconds !== undefined) row.total_seconds      = delta.total_seconds
-  if (delta.completedCount !== undefined) row.completed_count   = delta.completedCount
-  if (delta.completed_count !== undefined) row.completed_count  = delta.completed_count
-  if (delta.taskName      !== undefined) row.task_name          = delta.taskName
-  if (delta.task_name     !== undefined) row.task_name          = delta.task_name
-  if (delta.taskId        !== undefined) row.task_id            = delta.taskId
-  if (delta.task_id       !== undefined) row.task_id            = delta.task_id
-  if (delta.area          !== undefined) row.area               = delta.area
-  if (delta.startedAt     !== undefined) row.started_at         = delta.startedAt
-  if (delta.started_at    !== undefined) row.started_at         = delta.started_at
-  if (delta.urgentItems   !== undefined) row.interruptions_urgent = delta.urgentItems
-  if (delta.memoItems     !== undefined) row.interruptions_memo   = delta.memoItems
+  if (delta.phase             !== undefined) row.phase               = delta.phase
+  if (delta.totalSeconds      !== undefined) row.total_seconds       = delta.totalSeconds
+  if (delta.total_seconds     !== undefined) row.total_seconds       = delta.total_seconds
+  if (delta.completedCount    !== undefined) row.completed_count     = delta.completedCount
+  if (delta.completed_count   !== undefined) row.completed_count     = delta.completed_count
+  if (delta.taskName          !== undefined) row.task_name           = delta.taskName
+  if (delta.task_name         !== undefined) row.task_name           = delta.task_name
+  if (delta.taskId            !== undefined) row.task_id             = delta.taskId
+  if (delta.task_id           !== undefined) row.task_id             = delta.task_id
+  if (delta.area              !== undefined) row.area                = delta.area
+  if (delta.startedAt         !== undefined) row.started_at          = delta.startedAt
+  if (delta.started_at        !== undefined) row.started_at          = delta.started_at
+  if (delta.urgentItems       !== undefined) row.interruptions_urgent = delta.urgentItems
+  if (delta.memoItems         !== undefined) row.interruptions_memo   = delta.memoItems
   if (delta.interruptions_urgent !== undefined) row.interruptions_urgent = delta.interruptions_urgent
   if (delta.interruptions_memo   !== undefined) row.interruptions_memo   = delta.interruptions_memo
-  if (delta.endTime       !== undefined) row.end_time           = delta.endTime
-  if (delta.end_time      !== undefined) row.end_time           = delta.end_time
-  if (delta.pauseRemaining !== undefined) row.pause_remaining   = delta.pauseRemaining
-  if (delta.pause_remaining !== undefined) row.pause_remaining  = delta.pause_remaining
+  if (delta.endTime           !== undefined) row.end_time            = delta.endTime
+  if (delta.end_time          !== undefined) row.end_time            = delta.end_time
+  if (delta.pauseRemaining    !== undefined) row.pause_remaining     = delta.pauseRemaining
+  if (delta.pause_remaining   !== undefined) row.pause_remaining     = delta.pause_remaining
   return row
 }
 
 function saveLocal(data: TimerData, endTime: string | null, pauseRemaining: number | null, completedPomodoros: number) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({
-      phase: data.phase,
-      totalSeconds: data.totalSeconds,
-      endTime,
-      pauseRemaining,
-      completedCount: data.completedCount,
+      phase: data.phase, totalSeconds: data.totalSeconds,
+      endTime, pauseRemaining, completedCount: data.completedCount,
       completedPomodoros,
-      taskName: data.taskName,
-      taskId: data.taskId,
-      area: data.area,
+      taskName: data.taskName, taskId: data.taskId, area: data.area,
       startedAt: data.startedAt,
-      urgentItems: data.urgentItems,
-      memoItems: data.memoItems,
+      urgentItems: data.urgentItems, memoItems: data.memoItems,
       ts: Date.now(),
     }))
   } catch { /* quota */ }
 }
 
-function clearLocal() {
-  localStorage.removeItem(LS_KEY)
-}
+function clearLocal() { localStorage.removeItem(LS_KEY) }
 
 function loadLocal(): any | null {
   try {
@@ -93,9 +85,15 @@ export default function App() {
   const [userSettings, setUserSettings] = useState<Partial<UserSettings>>({})
   const [completedPomodoros, setCompletedPomodoros] = useState(0)
   const [pendingRecord, setPendingRecord] = useState<TimerData | null>(null)
-  const timerRef = useRef<ReturnType<typeof useTimer> | null>(null)
-  const completedRef = useRef(completedPomodoros)
+
+  const timerRef          = useRef<ReturnType<typeof useTimer> | null>(null)
+  const completedRef      = useRef(0)
+  const screenRef         = useRef<Screen>('start')   // ← tracks current screen for callbacks
+  const upsertSessionRef  = useRef<((s: any) => void) | null>(null)
+
+  // Keep refs in sync
   completedRef.current = completedPomodoros
+  screenRef.current    = screen
 
   const urlParams = getURLParams()
 
@@ -123,7 +121,15 @@ export default function App() {
     }
   }, [])
 
+  /**
+   * Remote session handler.
+   * Guard: if we're currently on record/settings, DON'T override screen or restore timer
+   * (prevents self-triggered Realtime updates from interrupting the record flow).
+   */
   const handleRemoteSession = useCallback((session: PomodoroSession) => {
+    const cur = screenRef.current
+    if (cur === 'record' || cur === 'settings') return   // ← KEY FIX
+
     timerRef.current?.restoreSession({
       phase: session.phase as Phase,
       total_seconds: session.total_seconds,
@@ -137,7 +143,6 @@ export default function App() {
       interruptions_memo: session.interruptions_memo || [],
       started_at: session.started_at,
     })
-    // completed_count in DB stores total completed pomodoros
     if (session.completed_count !== undefined) {
       setCompletedPomodoros(session.completed_count)
     }
@@ -147,6 +152,7 @@ export default function App() {
   }, [])
 
   const { upsertSession, fetchSession, fetchSettings, upsertSettings } = useSupabase(userId, handleRemoteSession)
+  upsertSessionRef.current = upsertSession
 
   function applySession(session: PomodoroSession) {
     timerRef.current?.restoreSession({
@@ -167,7 +173,7 @@ export default function App() {
     }
   }
 
-  // Load settings on login
+  // Load settings + restore session on login
   useEffect(() => {
     if (!userId) return
     fetchSettings().then(s => {
@@ -181,32 +187,30 @@ export default function App() {
     })
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync completedPomodoros to Supabase whenever it changes (so other devices get it)
+  // Sync completedPomodoros to Supabase (other devices get it)
+  // Use a timeout so it doesn't fire during phase-transition renders
   useEffect(() => {
     if (!userId) return
-    upsertSession({ completed_count: completedPomodoros } as any)
-  }, [completedPomodoros, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => {
+      upsertSessionRef.current?.({ completed_count: completedPomodoros } as any)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [completedPomodoros, userId])
 
   // On mount: restore from localStorage (works without login, survives lock screen)
   useEffect(() => {
     const local = loadLocal()
     if (local && (local.endTime || local.pauseRemaining !== null)) {
       timerRef.current?.restoreSession({
-        phase: local.phase,
-        total_seconds: local.totalSeconds,
-        end_time: local.endTime,
-        pause_remaining: local.pauseRemaining,
+        phase: local.phase, total_seconds: local.totalSeconds,
+        end_time: local.endTime, pause_remaining: local.pauseRemaining,
         completed_count: local.completedCount,
-        task_name: local.taskName,
-        task_id: local.taskId,
-        area: local.area,
+        task_name: local.taskName, task_id: local.taskId, area: local.area,
         interruptions_urgent: local.urgentItems || [],
         interruptions_memo: local.memoItems || [],
         started_at: local.startedAt,
       })
-      if (local.completedPomodoros !== undefined) {
-        setCompletedPomodoros(local.completedPomodoros)
-      }
+      if (local.completedPomodoros !== undefined) setCompletedPomodoros(local.completedPomodoros)
       setScreen('timer')
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -215,43 +219,42 @@ export default function App() {
   useEffect(() => {
     const handler = () => {
       if (document.hidden) return
+      if (screenRef.current === 'record' || screenRef.current === 'settings') return
       const local = loadLocal()
       if (local && (local.endTime || local.pauseRemaining !== null)) {
         timerRef.current?.restoreSession({
-          phase: local.phase,
-          total_seconds: local.totalSeconds,
-          end_time: local.endTime,
-          pause_remaining: local.pauseRemaining,
+          phase: local.phase, total_seconds: local.totalSeconds,
+          end_time: local.endTime, pause_remaining: local.pauseRemaining,
           completed_count: local.completedCount,
-          task_name: local.taskName,
-          task_id: local.taskId,
-          area: local.area,
+          task_name: local.taskName, task_id: local.taskId, area: local.area,
           interruptions_urgent: local.urgentItems || [],
           interruptions_memo: local.memoItems || [],
           started_at: local.startedAt,
         })
-        if (local.completedPomodoros !== undefined) {
-          setCompletedPomodoros(local.completedPomodoros)
-        }
+        if (local.completedPomodoros !== undefined) setCompletedPomodoros(local.completedPomodoros)
         setScreen('timer')
       }
-      if (userId) {
-        fetchSession().then(s => { if (s) applySession(s) })
-      }
+      if (userId) fetchSession().then(s => { if (s) applySession(s) })
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Work completes → go to Record.
+   * Immediately clear end_time in Supabase so Realtime bounce-backs
+   * don't think there's an active timer and override the screen.
+   */
   const handlePhaseComplete = useCallback((phase: Phase, data: TimerData) => {
     if (phase === 'work') {
-      // Work done → show record screen, count already incremented below
       setCompletedPomodoros(n => n + 1)
       setPendingRecord({ ...data })
       setScreen('record')
       clearLocal()
+      // Clear end_time so self-triggered Realtime won't pull back to timer
+      upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
     } else {
-      // Break done → reset and go back to StartScreen to re-select task
+      // Break done → reset and go to StartScreen to re-select task
       timerRef.current?.reset()
       setScreen('start')
       clearLocal()
@@ -260,8 +263,7 @@ export default function App() {
 
   const handleSessionChange = useCallback((delta: any) => {
     const row = toSessionRow(delta)
-    upsertSession(row)
-    // Save to localStorage for lock-screen survival
+    upsertSessionRef.current?.(row)
     if (timerRef.current) {
       saveLocal(
         timerRef.current.data,
@@ -270,7 +272,7 @@ export default function App() {
         completedRef.current,
       )
     }
-  }, [upsertSession])
+  }, [])
 
   const timer = useTimer({
     soundEnabled,
@@ -294,9 +296,9 @@ export default function App() {
       const queue: RecordData[] = JSON.parse(localStorage.getItem('notion_queue') || '[]')
       if (!queue.length) return
       const remaining: RecordData[] = []
-      for (const record of queue) {
-        try { await supabase.functions.invoke('notion-write', { body: record }) }
-        catch { remaining.push(record) }
+      for (const r of queue) {
+        try { await supabase.functions.invoke('notion-write', { body: r }) }
+        catch { remaining.push(r) }
       }
       localStorage.setItem('notion_queue', JSON.stringify(remaining))
     }
@@ -311,7 +313,7 @@ export default function App() {
     if (urlParams.task_name) window.history.replaceState({}, '', '/')
   }
 
-  // After record SUBMIT → go to break phase
+  // SUBMIT on RecordScreen → start break phase
   function handleRecord(record: RecordData) {
     submitRecord(record)
     timer.startNextPhase(completedPomodoros)
@@ -319,7 +321,7 @@ export default function App() {
     setPendingRecord(null)
   }
 
-  // RESTART on RecordScreen → undo last pomodoro, back to start
+  // RESTART on RecordScreen → undo last count, back to start
   function handleBackFromRecord() {
     setCompletedPomodoros(n => Math.max(0, n - 1))
     timer.reset()
@@ -328,15 +330,17 @@ export default function App() {
     clearLocal()
   }
 
-  // SKIP work phase (debug) → trigger work completion immediately
+  // SKIP work phase (debug) → go to record immediately
   function handleSkipWork() {
+    // Clear end_time first so Realtime doesn't bounce back
+    upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
     setCompletedPomodoros(n => n + 1)
     setPendingRecord({ ...timer.data })
     setScreen('record')
     clearLocal()
   }
 
-  // SKIP break → go back to StartScreen to re-select task
+  // SKIP break → reset and re-select task
   function handleSkipBreak() {
     timer.reset()
     setScreen('start')
@@ -357,6 +361,8 @@ export default function App() {
     await upsertSettings(s)
     setScreen(timer.data.state === 'idle' ? 'start' : 'timer')
   }
+
+  // ── Routing ──
 
   if (screen === 'settings') {
     return (
