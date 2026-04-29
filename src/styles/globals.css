@@ -19,13 +19,30 @@
 /* ─── Base ─── */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Prevent iOS Safari rubber-band scroll and address-bar resize glitches.
+   position:fixed + overflow:hidden locks the viewport so the app feels
+   native when added to the home screen or running in standalone PWA mode. */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
 body {
   background: var(--bg);
   color: #fff;
   font-family: var(--font);
   margin: 0;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+}
+
+/* The React root needs its own scroll container so individual screens
+   can still scroll internally (e.g. StartScreen task list). */
+#root {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ─── 8×8 pixel grid — use --grid-color to tint per screen ─── */

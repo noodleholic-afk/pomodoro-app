@@ -1,13 +1,29 @@
+/**
+ * Audio module for Pomodoro — iOS Safari safe.
+ *
+ * Rules:
+ * 1. AudioContext is created ONLY inside unlockAudioContext(), which must be
+ *    called synchronously from a user-gesture handler (click / touchend).
+ *    Creating an AudioContext before a gesture produces a suspended context
+ *    that iOS will never allow to play.
+ *
+ * 2. ctx.resume() is called UNCONDITIONALLY in unlockAudioContext() on every
+ *    gesture. iOS's ctx.state is unreliable — it can report "running" while
+ *    audio is still blocked, especially after a lock-screen or background event.
+ *
+ * 3. All play*() functions guard with `if (!audioCtx) return` so they silently
+ *    no-op if called before the first user gesture.
+ */
+
 let audioCtx: AudioContext | null = null
 
-function getCtx(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-  }
+/** Returns the shared context, or null if not yet unlocked by a gesture. */
+function getCtx(): AudioContext | null {
   return audioCtx
 }
 
 function playTone(
+  ctx: AudioContext,
   freq: number,
   type: OscillatorType,
   volume: number,
@@ -15,8 +31,7 @@ function playTone(
   startTime?: number,
   freqEnd?: number
 ) {
-  const ctx = getCtx()
-  const osc = ctx.createOscillator()
+  const osc  = ctx.createOscillator()
   const gain = ctx.createGain()
 
   osc.type = type
@@ -36,69 +51,74 @@ function playTone(
 }
 
 export function playWorkTick() {
-  playTone(800, 'square', 0.03, 0.02)
+  const ctx = getCtx()
+  if (!ctx) return
+  playTone(ctx, 800, 'square', 0.03, 0.02)
 }
 
 export function playBreakTick() {
   const ctx = getCtx()
-  playTone(600, 'sine', 0.025, 0.08, ctx.currentTime, 400)
+  if (!ctx) return
+  playTone(ctx, 600, 'sine', 0.025, 0.08, ctx.currentTime, 400)
 }
 
 export function playWorkAlarm() {
   const ctx = getCtx()
+  if (!ctx) return
   for (let i = 0; i < 8; i++) {
     const freq = i % 2 === 0 ? 880 : 660
-    playTone(freq, 'square', 0.3, 0.2, ctx.currentTime + i * 0.25)
+    playTone(ctx, freq, 'square', 0.3, 0.2, ctx.currentTime + i * 0.25)
   }
 }
 
 export function playBreakAlarm() {
   const ctx = getCtx()
+  if (!ctx) return
   const notes = [261.6, 329.6, 392.0, 523.3] // C-E-G-C
   notes.forEach((freq, i) => {
-    playTone(freq, 'sine', 0.25, 0.3, ctx.currentTime + i * 0.18)
+    playTone(ctx, freq, 'sine', 0.25, 0.3, ctx.currentTime + i * 0.18)
   })
 }
 
 /**
- * Must be called synchronously inside a user-gesture handler (click / touchend).
+ * MUST be called synchronously inside a user-gesture handler.
  *
- * iOS Safari suspends the AudioContext whenever the page loses focus (lock screen,
- * tab switch, home button). There is no persistent "unlocked" state — you must call
- * ctx.resume() again on every interaction after a suspension.
- *
- * Safe to call multiple times: resume() is a no-op when ctx.state === 'running'.
+ * - Creates the AudioContext on first call (lazy, gesture-gated).
+ * - Calls ctx.resume() unconditionally — iOS ctx.state is unreliable;
+ *   always re-issuing resume() is the only reliable way to re-activate
+ *   after lock-screen / tab-switch / background.
+ * - Plays a 1-frame silent buffer: required by iOS to mark the context
+ *   as "user-activated" so future async playback is permitted.
  */
 export function unlockAudioContext() {
-  const ctx = getCtx()
-
-  // Always attempt resume — iOS may have re-suspended after backgrounding.
-  // resume() returns a Promise but the synchronous call itself is what unblocks iOS.
-  if (ctx.state !== 'running') {
-    ctx.resume().catch(() => {/* ignore */})
+  // Create lazily — only ever inside a user gesture.
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
   }
 
-  // Play a zero-length silent buffer. This is the canonical iOS unlock trick:
-  // scheduling any AudioNode in a gesture callback convinces Safari to mark the
-  // context as "user-activated", allowing future (async) playback to succeed.
+  // Unconditional resume — do NOT guard with ctx.state check.
+  // iOS ctx.state is not reliable; calling resume() when already running is a no-op.
+  audioCtx.resume().catch(() => {/* ignore */})
+
+  // Silent 1-frame buffer: the canonical iOS unlock trick.
   try {
-    const buf = ctx.createBuffer(1, 1, 22050)
-    const src = ctx.createBufferSource()
+    const buf = audioCtx.createBuffer(1, 1, 22050)
+    const src = audioCtx.createBufferSource()
     src.buffer = buf
-    src.connect(ctx.destination)
+    src.connect(audioCtx.destination)
     src.start(0)
   } catch {
-    // createBuffer can throw in very old WebKit — swallow silently
+    // Very old WebKit may throw — swallow silently.
   }
 }
 
 /**
- * Called from the tick interval (async, not a gesture).
- * Attempts a best-effort resume so the interval keeps audio alive
- * without needing another user tap.
+ * Best-effort resume called from async contexts (e.g. setInterval tick).
+ * Not a substitute for unlockAudioContext() — use this only to attempt
+ * recovery when the context was suspended between ticks.
  */
 export function resumeAudioContext() {
-  if (audioCtx && audioCtx.state === 'suspended') {
+  if (audioCtx) {
     audioCtx.resume().catch(() => {/* ignore */})
   }
 }
