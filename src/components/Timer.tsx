@@ -58,7 +58,7 @@ function WorkInterruption({
           onClick={() => setUrgentOpen(o => !o)}
           style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
-          <span>🚨 <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : '紧急'}</span></span>
+          <span>🚨 <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : 'URGENT'}</span></span>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{urgentOpen ? '▲' : '▼'}</span>
         </button>
         {urgentOpen && (
@@ -69,7 +69,7 @@ function WorkInterruption({
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
                 style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
-                placeholder="记录..."
+                placeholder="Note..."
                 value={urgentInput}
                 onChange={e => setUrgentInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submit(urgentInput, onAddUrgent, () => setUrgentInput(''))}
@@ -88,7 +88,7 @@ function WorkInterruption({
           onClick={() => setMemoOpen(o => !o)}
           style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
-          <span>📌 <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : '备忘'}</span></span>
+          <span>📌 <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : 'MEMO'}</span></span>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{memoOpen ? '▲' : '▼'}</span>
         </button>
         {memoOpen && (
@@ -99,7 +99,7 @@ function WorkInterruption({
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
                 style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
-                placeholder="记录..."
+                placeholder="Note..."
                 value={memoInput}
                 onChange={e => setMemoInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submit(memoInput, onAddMemo, () => setMemoInput(''))}
@@ -129,7 +129,7 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
           <span className="text-base">🍅</span>
           <span style={{ color: 'var(--work-hi)', fontSize: 10, ...FONT }}>WORK</span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>25分</span>
+        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>25 MIN</span>
       </div>
 
       <div className="flex-1 flex flex-col px-4 pb-5 gap-3 max-w-md mx-auto w-full">
@@ -226,7 +226,6 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
             }}
           >
             <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
-            <span style={{ fontSize: 6, color: 'rgba(255,100,100,0.6)' }}>{isRunning ? '暂停' : '继续'}</span>
           </button>
 
           {/* Sound toggle */}
