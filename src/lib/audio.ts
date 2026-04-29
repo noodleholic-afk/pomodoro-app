@@ -1,4 +1,5 @@
 let audioCtx: AudioContext | null = null
+let unlocked = false
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
@@ -64,4 +65,22 @@ export function resumeAudioContext() {
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume()
   }
+}
+
+/**
+ * Unlock Web Audio on iOS/mobile.
+ * Must be called from a direct user gesture (click/touchend).
+ * Plays a silent buffer to ungate the AudioContext.
+ */
+export function unlockAudioContext() {
+  if (unlocked) return
+  const ctx = getCtx()
+  if (ctx.state === 'suspended') ctx.resume()
+  // Play a silent buffer to fully unlock on iOS
+  const buf = ctx.createBuffer(1, 1, 22050)
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  src.connect(ctx.destination)
+  src.start(0)
+  unlocked = true
 }

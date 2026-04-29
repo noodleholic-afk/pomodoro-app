@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
+import { unlockAudioContext } from '../lib/audio'
 
 interface Props {
   data: TimerData
@@ -7,7 +8,6 @@ interface Props {
   completedPomodoros: number
   onPause: () => void
   onResume: () => void
-  onReset: () => void
   onSkip: () => void
   onToggleSound: () => void
 }
@@ -22,7 +22,7 @@ function fmt(s: number) {
 
 export function BreakScreen({
   data, soundEnabled, completedPomodoros,
-  onPause, onResume, onReset, onSkip, onToggleSound,
+  onPause, onResume, onSkip, onToggleSound,
 }: Props) {
   const isShort   = data.phase === 'short-break'
   const hi        = isShort ? 'var(--green)' : 'var(--blue)'
@@ -50,6 +50,10 @@ export function BreakScreen({
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }
+
+  function withUnlock(fn: () => void) {
+    return () => { unlockAudioContext(); fn() }
   }
 
   return (
@@ -176,9 +180,9 @@ export function BreakScreen({
 
         {/* ─── Controls ─── */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-          {/* PAUSE / RESUME — flex:2 */}
+          {/* PAUSE / RESUME */}
           <button
-            onClick={isRunning ? onPause : onResume}
+            onClick={withUnlock(isRunning ? onPause : onResume)}
             className="px-btn"
             style={{
               ...FONT, flex: 2, padding: '14px 0',
@@ -186,7 +190,7 @@ export function BreakScreen({
               borderRadius: 8, fontSize: 11,
               background: lo, color: hi,
               boxShadow: `0 0 10px ${hi}33`,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
@@ -209,7 +213,7 @@ export function BreakScreen({
 
           {/* SOUND */}
           <button
-            onClick={onToggleSound}
+            onClick={withUnlock(onToggleSound)}
             className="px-btn"
             style={{
               padding: '14px 12px', fontSize: 16,
@@ -221,21 +225,6 @@ export function BreakScreen({
           >
             <span>{soundEnabled ? '🔊' : '🔇'}</span>
             <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
-          </button>
-
-          {/* ABANDON */}
-          <button
-            onClick={onReset}
-            className="px-btn"
-            style={{
-              ...FONT, padding: '14px 12px',
-              border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
-              background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
-              fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            }}
-          >
-            <span>✕</span>
-            <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>ABANDON</span>
           </button>
         </div>
 

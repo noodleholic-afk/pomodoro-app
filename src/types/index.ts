@@ -29,14 +29,11 @@ export interface RecordData {
   task_name: string
   task_id?: string
   area?: string
-  type?: '专注' | '学习' | '行政' | '复盘'
   engagement?: number
   energy?: '↑ 上升' | '→ 持平' | '↓ 下降'
-  interruption?: '无' | '内部' | '外部'
-  scene?: '🏠 在家' | '☕ 公共空间' | '👥 有人陪' | '🚶 外出独处'
+  scene?: '在家' | '公共空间' | '有人陪' | '外出独处'
   result_note?: string
-  trigger?: string
-  memo?: string
+  write_goodtime?: boolean
   duration?: number
   started_at: string
   interruptions_urgent: string[]

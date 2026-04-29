@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
+import { unlockAudioContext } from '../lib/audio'
 
 interface Props {
   data: TimerData
@@ -7,7 +8,7 @@ interface Props {
   completedPomodoros: number
   onPause: () => void
   onResume: () => void
-  onReset: () => void      // "放弃" — back to start
+  onReset: () => void
   onToggleSound: () => void
   onAddUrgent: (text: string) => void
   onAddMemo: (text: string) => void
@@ -44,38 +45,45 @@ function WorkInterruption({
   }
 
   const half: React.CSSProperties = {
-    flex: 1, display: 'flex', flexDirection: 'column',
+    flex: '1 1 0', minWidth: 0,
+    display: 'flex', flexDirection: 'column',
     border: '2px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    overflow: 'hidden',
     ...C,
+  }
+
+  const toggleBtn: React.CSSProperties = {
+    ...FONT, display: 'flex', justifyContent: 'center', alignItems: 'center',
+    gap: 6, padding: '8px 10px', fontSize: 10,
+    color: 'rgba(255,255,255,0.65)',
+    background: 'transparent', border: 'none', cursor: 'pointer',
+    width: '100%',
   }
 
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       {/* Urgent */}
       <div style={half}>
-        <button
-          className="px-btn"
-          onClick={() => setUrgentOpen(o => !o)}
-          style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-        >
-          <span>🚨 <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : 'URGENT'}</span></span>
+        <button className="px-btn" onClick={() => setUrgentOpen(o => !o)} style={toggleBtn}>
+          <span>🚨</span>
+          <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : 'URGENT'}</span>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{urgentOpen ? '▲' : '▼'}</span>
         </button>
         {urgentOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {urgentItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4 }}>{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
+                style={{ ...FONT, flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="Note..."
                 value={urgentInput}
                 onChange={e => setUrgentInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submit(urgentInput, onAddUrgent, () => setUrgentInput(''))}
               />
               <button className="px-btn" onClick={() => submit(urgentInput, onAddUrgent, () => setUrgentInput(''))}
-                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10 }}>+</button>
+                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10, flexShrink: 0 }}>+</button>
             </div>
           </div>
         )}
@@ -83,29 +91,26 @@ function WorkInterruption({
 
       {/* Memo */}
       <div style={half}>
-        <button
-          className="px-btn"
-          onClick={() => setMemoOpen(o => !o)}
-          style={{ ...FONT, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: 10, color: 'rgba(255,255,255,0.65)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-        >
-          <span>📌 <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : 'MEMO'}</span></span>
+        <button className="px-btn" onClick={() => setMemoOpen(o => !o)} style={toggleBtn}>
+          <span>📌</span>
+          <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : 'MEMO'}</span>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 8 }}>{memoOpen ? '▲' : '▼'}</span>
         </button>
         {memoOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {memoItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4 }}>{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                style={{ ...FONT, flex: 1, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
+                style={{ ...FONT, flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 9, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="Note..."
                 value={memoInput}
                 onChange={e => setMemoInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submit(memoInput, onAddMemo, () => setMemoInput(''))}
               />
               <button className="px-btn" onClick={() => submit(memoInput, onAddMemo, () => setMemoInput(''))}
-                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10 }}>+</button>
+                style={{ padding: '4px 8px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 10, flexShrink: 0 }}>+</button>
             </div>
           </div>
         )}
@@ -116,9 +121,11 @@ function WorkInterruption({
 
 export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResume, onReset, onToggleSound, onAddUrgent, onAddMemo }: Props) {
   const isRunning = data.state === 'running'
+  const cyclePos = completedPomodoros % 4
 
-  // 4 pomodoro progress blocks
-  const cyclePos = completedPomodoros % 4  // position in current cycle (0-3)
+  function withUnlock(fn: () => void) {
+    return () => { unlockAudioContext(); fn() }
+  }
 
   return (
     <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
@@ -163,11 +170,10 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
         {/* ─── Timer display ─── */}
         <div style={{
           background: '#060810',
-          border: `3px solid var(--work-border)`,
+          border: '3px solid var(--work-border)',
           borderRadius: 8, padding: '20px 12px',
           textAlign: 'center', position: 'relative',
         }}>
-          {/* corner dots */}
           {[[-1,-1],[1,-1],[-1,1],[1,1]].map(([x,y], i) => (
             <div key={i} style={{
               position: 'absolute',
@@ -212,9 +218,9 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
 
         {/* ─── Controls ─── */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-          {/* PAUSE / RESUME — flex:2 */}
+          {/* PAUSE / RESUME */}
           <button
-            onClick={isRunning ? onPause : onResume}
+            onClick={withUnlock(isRunning ? onPause : onResume)}
             className="px-btn"
             style={{
               ...FONT, flex: 2, padding: '14px 0',
@@ -222,7 +228,7 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
               borderRadius: 8, fontSize: 11,
               background: 'var(--work-lo)', color: '#ff8888',
               boxShadow: '0 0 10px rgba(170,51,51,0.3)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
@@ -230,7 +236,7 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
 
           {/* Sound toggle */}
           <button
-            onClick={onToggleSound}
+            onClick={withUnlock(onToggleSound)}
             className="px-btn"
             style={{
               padding: '14px 12px', fontSize: 16,
@@ -243,7 +249,7 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
             <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
           </button>
 
-          {/* Abandon / X */}
+          {/* ✕ */}
           <button
             onClick={onReset}
             className="px-btn"
@@ -251,11 +257,10 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
               ...FONT, padding: '14px 12px',
               border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
               background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
-              fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <span>✕</span>
-            <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>ABANDON</span>
+            ✕
           </button>
         </div>
       </div>

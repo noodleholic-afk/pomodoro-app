@@ -7,24 +7,50 @@ interface Props {
   timerData: TimerData
   completedPomodoros: number
   onSubmit: (record: RecordData) => void
-  onBack: () => void   // ↩ RESTART — decrement count + go to start
+  onBack: () => void
 }
 
-type EnergyType = '↑ UP' | '→ FLAT' | '↓ DOWN'
-type SceneType  = '🏠 HOME' | '☕ CAFÉ' | '👥 SOCIAL' | '🚶 OUT'
+const SCENES  = ['在家', '公共空间', '有人陪', '外出独处'] as const
+const ENERGYS = ['↑ 上升', '→ 持平', '↓ 下降'] as const
 
 const FONT = { fontFamily: 'var(--font)' }
 const C    = { background: 'var(--card)' }
 
+function SelectRow<T extends string>({
+  label, options, value, onChange,
+}: {
+  label: string; options: readonly T[]; value: T | null; onChange: (v: T | null) => void
+}) {
+  return (
+    <div>
+      <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>{label}</p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {options.map(opt => (
+          <button
+            key={opt}
+            onClick={() => onChange(value === opt ? null : opt)}
+            className="px-btn"
+            style={{
+              ...FONT, fontSize: 8, padding: '5px 10px', borderRadius: 4,
+              border: `1px solid ${value === opt ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
+              background: value === opt ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+              color: value === opt ? '#fff' : 'rgba(255,255,255,0.5)',
+            }}
+          >{opt}</button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }: Props) {
-  const [whatDone,   setWhatDone]   = useState('')
-  const [focus,      setFocus]      = useState<number | null>(null)
-  const [showDetail, setShowDetail] = useState(false)
-  const [feeling,    setFeeling]    = useState('')
-  const [scene,      setScene]      = useState<SceneType | null>(null)
-  const [energy,     setEnergy]     = useState<EnergyType | null>(null)
-  const [aiInput,    setAiInput]    = useState('')
-  const [aiLoading,  setAiLoading]  = useState(false)
+  const [whatDone,     setWhatDone]     = useState('')
+  const [focus,        setFocus]        = useState<number | null>(null)
+  const [scene,        setScene]        = useState<typeof SCENES[number] | null>(null)
+  const [energy,       setEnergy]       = useState<typeof ENERGYS[number] | null>(null)
+  const [writeGoodtime,setWriteGoodtime]= useState(false)
+  const [aiInput,      setAiInput]      = useState('')
+  const [aiLoading,    setAiLoading]    = useState(false)
 
   async function handleAIParse() {
     const text = aiInput.trim()
@@ -35,10 +61,12 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
       if (data?.result_note) setWhatDone(data.result_note)
       if (data?.engagement)  setFocus(data.engagement)
       if (data?.energy) {
-        const map: Record<string, EnergyType> = {
-          '↑ 上升': '↑ UP', '→ 持平': '→ FLAT', '↓ 下降': '↓ DOWN',
-        }
-        setEnergy(map[data.energy] ?? null)
+        const found = ENERGYS.find(e => e === data.energy)
+        if (found) setEnergy(found)
+      }
+      if (data?.scene) {
+        const found = SCENES.find(s => data.scene?.includes(s))
+        if (found) setScene(found)
       }
     } catch { /* silent */ } finally {
       setAiLoading(false)
@@ -46,21 +74,15 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
   }
 
   function handleSubmit() {
-    const energyMap: Record<EnergyType, string> = {
-      '↑ UP': '↑ 上升', '→ FLAT': '→ 持平', '↓ DOWN': '↓ 下降',
-    }
-    const sceneMap: Record<SceneType, string> = {
-      '🏠 HOME': '🏠 在家', '☕ CAFÉ': '☕ 公共空间',
-      '👥 SOCIAL': '👥 有人陪', '🚶 OUT': '🚶 外出独处',
-    }
     onSubmit({
       task_name: timerData.taskName,
       task_id:   timerData.taskId   || undefined,
       area:      timerData.area     || undefined,
       engagement: focus             || undefined,
-      energy:    energy ? (energyMap[energy] as any) : undefined,
-      scene:     scene  ? (sceneMap[scene]   as any) : undefined,
-      result_note: (whatDone || feeling) || undefined,
+      energy:    energy             || undefined,
+      scene:     scene              || undefined,
+      result_note: whatDone         || undefined,
+      write_goodtime: writeGoodtime,
       duration:  25,
       started_at: timerData.startedAt || new Date().toISOString(),
       interruptions_urgent: timerData.urgentItems.map(i => i.text),
@@ -86,128 +108,79 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
 
         {/* ─── Task name ─── */}
         <div style={{
-          border: '2px solid var(--work-border)',
-          borderRadius: 6, padding: '10px 14px',
+          border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
           background: 'rgba(170,51,51,0.12)',
-          ...FONT, fontSize: 11, color: '#ffaaaa',
-          textAlign: 'center',
+          ...FONT, fontSize: 11, color: '#ffaaaa', textAlign: 'center',
         }}>
           {timerData.taskName}
         </div>
 
-        {/* ─── WHAT DID YOU DO ─── */}
-        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
-          <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>✍️ WHAT DID YOU DO</p>
-          <textarea
-            style={{
-              ...FONT, fontSize: 10, color: '#fff',
-              background: 'transparent', border: 'none', outline: 'none',
-              resize: 'none', width: '100%',
-            }}
-            rows={3}
-            placeholder="..."
-            value={whatDone}
-            onChange={e => setWhatDone(e.target.value)}
-          />
-        </div>
+        {/* ─── All fields in one card ─── */}
+        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '12px', ...C, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* ─── FOCUS stars ─── */}
-        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
-          <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>⚡ FOCUS</p>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[1,2,3,4,5].map(v => (
-              <button
-                key={v}
-                onClick={() => setFocus(focus === v ? null : v)}
-                className="px-btn"
-                style={{
-                  fontFamily: 'serif', fontSize: 24,
-                  color: v <= (focus ?? 0) ? '#ffcc44' : 'rgba(255,255,255,0.2)',
-                  background: 'transparent', border: 'none', padding: '2px 4px',
-                  transition: 'color 0.15s',
-                }}
-              >
-                {v <= (focus ?? 0) ? '★' : '☆'}
-              </button>
-            ))}
+          {/* WHAT DID YOU DO */}
+          <div>
+            <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>✍️ WHAT DID YOU DO</p>
+            <textarea
+              style={{
+                ...FONT, fontSize: 10, color: '#fff',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 4, padding: '6px 8px',
+                resize: 'none', width: '100%', outline: 'none',
+              }}
+              rows={2}
+              placeholder="..."
+              value={whatDone}
+              onChange={e => setWhatDone(e.target.value)}
+            />
           </div>
-        </div>
 
-        {/* ─── GOOD TIME LOG (collapsible) ─── */}
-        <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, ...C, overflow: 'hidden' }}>
-          <button
-            onClick={() => setShowDetail(o => !o)}
-            className="px-btn"
-            style={{
-              ...FONT, width: '100%', display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', padding: '10px 12px',
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontSize: 9, color: 'rgba(255,255,255,0.5)',
-            }}
-          >
-            <span>🌟 GOOD TIME LOG</span>
-            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 8 }}>{showDetail ? '▲' : '▼'}</span>
-          </button>
-
-          {showDetail && (
-            <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {/* Feeling */}
-              <div>
-                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>FEELING</p>
-                <input
+          {/* FOCUS (1-5) */}
+          <div>
+            <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>⚡ FOCUS (1-5)</p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[1,2,3,4,5].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setFocus(focus === v ? null : v)}
+                  className="px-btn"
                   style={{
-                    ...FONT, fontSize: 9, color: '#fff',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 4, padding: '6px 8px', width: '100%', outline: 'none',
+                    fontFamily: 'serif', fontSize: 24,
+                    color: v <= (focus ?? 0) ? '#ffcc44' : 'rgba(255,255,255,0.2)',
+                    background: 'transparent', border: 'none', padding: '2px 4px',
+                    transition: 'color 0.15s',
                   }}
-                  placeholder="How did it feel?"
-                  value={feeling}
-                  onChange={e => setFeeling(e.target.value)}
-                />
-              </div>
-
-              {/* Scene */}
-              <div>
-                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>SCENE</p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {(['🏠 HOME','☕ CAFÉ','👥 SOCIAL','🚶 OUT'] as SceneType[]).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setScene(scene === s ? null : s)}
-                      className="px-btn"
-                      style={{
-                        ...FONT, fontSize: 8, padding: '5px 8px', borderRadius: 4,
-                        border: `1px solid ${scene === s ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                        background: scene === s ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-                        color: scene === s ? '#fff' : 'rgba(255,255,255,0.5)',
-                      }}
-                    >{s}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Energy */}
-              <div>
-                <p style={{ ...FONT, fontSize: 8, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>ENERGY</p>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['↑ UP','→ FLAT','↓ DOWN'] as EnergyType[]).map(e => (
-                    <button
-                      key={e}
-                      onClick={() => setEnergy(energy === e ? null : e)}
-                      className="px-btn"
-                      style={{
-                        ...FONT, fontSize: 8, padding: '5px 10px', borderRadius: 4,
-                        border: `1px solid ${energy === e ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                        background: energy === e ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-                        color: energy === e ? '#fff' : 'rgba(255,255,255,0.5)',
-                      }}
-                    >{e}</button>
-                  ))}
-                </div>
-              </div>
+                >
+                  {v <= (focus ?? 0) ? '★' : '☆'}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* SCENE */}
+          <SelectRow label="🏠 SCENE" options={SCENES} value={scene} onChange={setScene} />
+
+          {/* ENERGY */}
+          <SelectRow label="⚡ ENERGY" options={ENERGYS} value={energy} onChange={setEnergy} />
+
+          {/* Write to Good Time Log checkbox */}
+          <div
+            onClick={() => setWriteGoodtime(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', paddingTop: 4 }}
+          >
+            <div style={{
+              width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+              border: `2px solid ${writeGoodtime ? '#ffcc44' : 'rgba(255,255,255,0.25)'}`,
+              background: writeGoodtime ? '#ffcc44' : 'transparent',
+              transition: 'all 0.15s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {writeGoodtime && <span style={{ fontSize: 9, color: '#000', lineHeight: 1 }}>✓</span>}
+            </div>
+            <span style={{ ...FONT, fontSize: 8, color: writeGoodtime ? '#ffcc44' : 'rgba(255,255,255,0.5)' }}>
+              🌟 WRITE TO GOOD TIME LOG
+            </span>
+          </div>
         </div>
 
         {/* ─── AI PARSE ─── */}
@@ -243,7 +216,6 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
 
         {/* ─── Action buttons ─── */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
-          {/* RESTART */}
           <button
             onClick={onBack}
             className="px-btn"
@@ -251,14 +223,11 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
               ...FONT, flex: 1, padding: '14px 0',
               border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
               background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)',
-              fontSize: 10,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <span>↩ RESTART</span>
+            ↩ RESTART
           </button>
-
-          {/* SUBMIT */}
           <button
             onClick={handleSubmit}
             className="px-btn"
@@ -266,12 +235,11 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
               ...FONT, flex: 2, padding: '14px 0',
               border: '2px solid var(--work-hi)', borderRadius: 8,
               background: 'var(--work-lo)', color: '#ff8888',
-              fontSize: 11,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 10px rgba(204,68,68,0.3)',
             }}
           >
-            <span>✓ SUBMIT</span>
+            ✓ SUBMIT
           </button>
         </div>
 
