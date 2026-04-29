@@ -1,5 +1,4 @@
 let audioCtx: AudioContext | null = null
-let unlocked = false
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
@@ -61,26 +60,45 @@ export function playBreakAlarm() {
   })
 }
 
-export function resumeAudioContext() {
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume()
+/**
+ * Must be called synchronously inside a user-gesture handler (click / touchend).
+ *
+ * iOS Safari suspends the AudioContext whenever the page loses focus (lock screen,
+ * tab switch, home button). There is no persistent "unlocked" state — you must call
+ * ctx.resume() again on every interaction after a suspension.
+ *
+ * Safe to call multiple times: resume() is a no-op when ctx.state === 'running'.
+ */
+export function unlockAudioContext() {
+  const ctx = getCtx()
+
+  // Always attempt resume — iOS may have re-suspended after backgrounding.
+  // resume() returns a Promise but the synchronous call itself is what unblocks iOS.
+  if (ctx.state !== 'running') {
+    ctx.resume().catch(() => {/* ignore */})
+  }
+
+  // Play a zero-length silent buffer. This is the canonical iOS unlock trick:
+  // scheduling any AudioNode in a gesture callback convinces Safari to mark the
+  // context as "user-activated", allowing future (async) playback to succeed.
+  try {
+    const buf = ctx.createBuffer(1, 1, 22050)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start(0)
+  } catch {
+    // createBuffer can throw in very old WebKit — swallow silently
   }
 }
 
 /**
- * Unlock Web Audio on iOS/mobile.
- * Must be called from a direct user gesture (click/touchend).
- * Plays a silent buffer to ungate the AudioContext.
+ * Called from the tick interval (async, not a gesture).
+ * Attempts a best-effort resume so the interval keeps audio alive
+ * without needing another user tap.
  */
-export function unlockAudioContext() {
-  if (unlocked) return
-  const ctx = getCtx()
-  if (ctx.state === 'suspended') ctx.resume()
-  // Play a silent buffer to fully unlock on iOS
-  const buf = ctx.createBuffer(1, 1, 22050)
-  const src = ctx.createBufferSource()
-  src.buffer = buf
-  src.connect(ctx.destination)
-  src.start(0)
-  unlocked = true
+export function resumeAudioContext() {
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {/* ignore */})
+  }
 }

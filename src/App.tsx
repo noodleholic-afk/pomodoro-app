@@ -110,14 +110,16 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Unlock audio on first touch (iOS)
+  // Re-unlock AudioContext on every user interaction (iOS Safari).
+  // iOS can re-suspend the AudioContext after lock-screen / background.
+  // unlockAudioContext() is a no-op when ctx.state === 'running', so this is cheap.
   useEffect(() => {
     const handler = () => { unlockAudioContext() }
-    document.addEventListener('touchstart', handler, { capture: true, once: true })
-    document.addEventListener('click', handler, { capture: true, once: true })
+    document.addEventListener('touchstart', handler, { capture: true, passive: true })
+    document.addEventListener('click',      handler, { capture: true })
     return () => {
       document.removeEventListener('touchstart', handler, true)
-      document.removeEventListener('click', handler, true)
+      document.removeEventListener('click',      handler, true)
     }
   }, [])
 
