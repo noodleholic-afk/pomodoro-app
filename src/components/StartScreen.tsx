@@ -9,6 +9,7 @@ interface Props {
   onStart: (taskName: string, taskId: string, area: string) => void
   onOpenSettings: () => void
   completedPomodoros: number
+  isLoggedIn?: boolean
 }
 
 const AREAS = [
@@ -26,7 +27,7 @@ const AREAS = [
 const FONT = { fontFamily: 'var(--font)' }
 const C = { background: 'var(--card)' }
 
-export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, onOpenSettings, completedPomodoros }: Props) {
+export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, onOpenSettings, completedPomodoros, isLoggedIn }: Props) {
   const [taskName,     setTaskName]     = useState(prefillTask    || '')
   const [taskId,       setTaskId]       = useState(prefillTaskId  || '')
   const [selectedArea, setSelectedArea] = useState(prefillArea    || '')
@@ -117,34 +118,41 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
         </div>
 
         {/* ─── Notion tasks ─── */}
-        {(loading || tasks.length > 0) && (
-          <div className="rounded-lg border border-white/10 p-3" style={C}>
-            <p className="text-white/40 text-xs mb-2" style={FONT}>Notion 任务</p>
-            {loading ? (
-              <p className="text-white/25 text-xs py-1" style={FONT}>载入中...</p>
-            ) : (
-              <div className="space-y-1.5">
-                {tasks.map(task => (
-                  <button
-                    key={task.id}
-                    onClick={() => selectTask(task)}
-                    className="px-btn w-full text-left px-3 py-2 text-xs"
-                    style={{
-                      ...FONT,
-                      background: taskId === task.id ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
-                      border: `2px solid ${taskId === task.id ? 'var(--work-border)' : 'rgba(255,255,255,0.1)'}`,
-                      color: taskId === task.id ? '#ffaaaa' : 'rgba(255,255,255,0.7)',
-                      borderRadius: 6,
-                    }}
-                  >
-                    <div className="truncate">{task.name}</div>
-                    {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, marginTop: 2 }}>{task.area}</div>}
-                  </button>
-                ))}
-              </div>
+        <div className="rounded-lg border border-white/10 p-3" style={C}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-white/40 text-xs" style={FONT}>Notion 任务</p>
+            {isLoggedIn && (
+              <button onClick={fetchTasks} className="px-btn text-white/25 text-xs" style={FONT}>↻</button>
             )}
           </div>
-        )}
+          {!isLoggedIn ? (
+            <p className="text-white/20 text-xs py-1" style={FONT}>⚙ 登录后显示</p>
+          ) : loading ? (
+            <p className="text-white/25 text-xs py-1" style={FONT}>载入中...</p>
+          ) : tasks.length === 0 ? (
+            <p className="text-white/20 text-xs py-1" style={FONT}>无进行中任务（检查 Settings → Notion Token）</p>
+          ) : (
+            <div className="space-y-1.5">
+              {tasks.map(task => (
+                <button
+                  key={task.id}
+                  onClick={() => selectTask(task)}
+                  className="px-btn w-full text-left px-3 py-2 text-xs"
+                  style={{
+                    ...FONT,
+                    background: taskId === task.id ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${taskId === task.id ? 'var(--work-border)' : 'rgba(255,255,255,0.1)'}`,
+                    color: taskId === task.id ? '#ffaaaa' : 'rgba(255,255,255,0.7)',
+                    borderRadius: 6,
+                  }}
+                >
+                  <div className="truncate">{task.name}</div>
+                  {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, marginTop: 2 }}>{task.area}</div>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ─── Manual input + AI button ─── */}
         <div className="rounded-lg border border-white/10 p-3" style={C}>

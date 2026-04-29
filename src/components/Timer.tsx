@@ -9,6 +9,7 @@ interface Props {
   onPause: () => void
   onResume: () => void
   onReset: () => void
+  onSkip: () => void
   onToggleSound: () => void
   onAddUrgent: (text: string) => void
   onAddMemo: (text: string) => void
@@ -23,7 +24,6 @@ function fmt(s: number) {
   return `${m}:${sec}`
 }
 
-/* ── Inline side-by-side interruption input ── */
 function WorkInterruption({
   urgentItems, memoItems, onAddUrgent, onAddMemo,
 }: {
@@ -48,21 +48,18 @@ function WorkInterruption({
     flex: '1 1 0', minWidth: 0,
     display: 'flex', flexDirection: 'column',
     border: '2px solid rgba(255,255,255,0.1)', borderRadius: 6,
-    overflow: 'hidden',
-    ...C,
+    overflow: 'hidden', ...C,
   }
 
   const toggleBtn: React.CSSProperties = {
     ...FONT, display: 'flex', justifyContent: 'center', alignItems: 'center',
     gap: 6, padding: '8px 10px', fontSize: 10,
     color: 'rgba(255,255,255,0.65)',
-    background: 'transparent', border: 'none', cursor: 'pointer',
-    width: '100%',
+    background: 'transparent', border: 'none', cursor: 'pointer', width: '100%',
   }
 
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      {/* Urgent */}
       <div style={half}>
         <button className="px-btn" onClick={() => setUrgentOpen(o => !o)} style={toggleBtn}>
           <span>🚨</span>
@@ -89,7 +86,6 @@ function WorkInterruption({
         )}
       </div>
 
-      {/* Memo */}
       <div style={half}>
         <button className="px-btn" onClick={() => setMemoOpen(o => !o)} style={toggleBtn}>
           <span>📌</span>
@@ -119,17 +115,22 @@ function WorkInterruption({
   )
 }
 
-export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResume, onReset, onToggleSound, onAddUrgent, onAddMemo }: Props) {
+export function Timer({
+  data, soundEnabled, completedPomodoros,
+  onPause, onResume, onReset, onSkip, onToggleSound, onAddUrgent, onAddMemo,
+}: Props) {
   const isRunning = data.state === 'running'
-  const cyclePos = completedPomodoros % 4
+  const cyclePos  = completedPomodoros % 4
 
   function withUnlock(fn: () => void) {
     return () => { unlockAudioContext(); fn() }
   }
 
   return (
-    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
-
+    <div
+      className="min-h-screen pixel-grid page-fade flex flex-col"
+      style={{ background: 'var(--bg)', ...FONT, '--grid-color': 'rgba(204,68,68,0.07)' } as React.CSSProperties}
+    >
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
@@ -154,11 +155,10 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
           ))}
         </div>
 
-        {/* ─── Task name (blinking border) ─── */}
+        {/* ─── Task name ─── */}
         {data.taskName && (
           <div className="blink-task" style={{
-            border: '2px solid var(--work-border)',
-            borderRadius: 6, padding: '10px 14px',
+            border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
             background: 'rgba(170,51,51,0.12)',
             ...FONT, fontSize: 11, color: '#ffaaaa',
             textAlign: 'center', letterSpacing: '0.05em',
@@ -169,15 +169,13 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
 
         {/* ─── Timer display ─── */}
         <div style={{
-          background: '#060810',
-          border: '3px solid var(--work-border)',
+          background: '#060810', border: '3px solid var(--work-border)',
           borderRadius: 8, padding: '20px 12px',
           textAlign: 'center', position: 'relative',
         }}>
           {[[-1,-1],[1,-1],[-1,1],[1,1]].map(([x,y], i) => (
             <div key={i} style={{
-              position: 'absolute',
-              width: 5, height: 5, borderRadius: 1,
+              position: 'absolute', width: 5, height: 5, borderRadius: 1,
               background: 'var(--work-hi)',
               top: x < 0 ? 5 : undefined, bottom: x > 0 ? 5 : undefined,
               left: y < 0 ? 5 : undefined, right: y > 0 ? 5 : undefined,
@@ -188,9 +186,7 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
             style={{
               fontFamily: "'Press Start 2P', monospace",
               fontSize: 'clamp(2.8rem, 14vw, 4.5rem)',
-              color: '#fff',
-              letterSpacing: '0.06em',
-              display: 'block',
+              color: '#fff', letterSpacing: '0.06em', display: 'block',
               textShadow: isRunning ? undefined : '0 0 8px rgba(255,255,255,0.4)',
             }}
           >
@@ -201,8 +197,8 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
         {/* ─── Progress bar ─── */}
         <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 3, height: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
           <div style={{
-            height: '100%', background: 'var(--work-hi)',
-            borderRadius: 3, transition: 'width 1s linear',
+            height: '100%', background: 'var(--work-hi)', borderRadius: 3,
+            transition: 'width 1s linear',
             width: `${data.totalSeconds > 0 ? ((data.totalSeconds - data.remaining) / data.totalSeconds) * 100 : 0}%`,
             boxShadow: '0 0 8px rgba(204,68,68,0.6)',
           }} />
@@ -216,25 +212,36 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
           onAddMemo={onAddMemo}
         />
 
+        {/* ─── DEBUG SKIP row ─── */}
+        <button
+          onClick={onSkip}
+          className="px-btn"
+          style={{
+            ...FONT, width: '100%', padding: '8px',
+            border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 6,
+            background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.35)',
+            fontSize: 9, letterSpacing: '0.05em',
+          }}
+        >
+          ⏭ SKIP WORK (DEBUG)
+        </button>
+
         {/* ─── Controls ─── */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-          {/* PAUSE / RESUME */}
           <button
             onClick={withUnlock(isRunning ? onPause : onResume)}
             className="px-btn"
             style={{
               ...FONT, flex: 2, padding: '14px 0',
-              border: '2px solid var(--work-border)',
-              borderRadius: 8, fontSize: 11,
+              border: '2px solid var(--work-border)', borderRadius: 8, fontSize: 11,
               background: 'var(--work-lo)', color: '#ff8888',
               boxShadow: '0 0 10px rgba(170,51,51,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
+            {isRunning ? '⏸ PAUSE' : '▶ RESUME'}
           </button>
 
-          {/* Sound toggle */}
           <button
             onClick={withUnlock(onToggleSound)}
             className="px-btn"
@@ -249,7 +256,6 @@ export function Timer({ data, soundEnabled, completedPomodoros, onPause, onResum
             <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
           </button>
 
-          {/* ✕ */}
           <button
             onClick={onReset}
             className="px-btn"

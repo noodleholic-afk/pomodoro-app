@@ -91,7 +91,10 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
   }
 
   return (
-    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
+    <div
+      className="min-h-screen pixel-grid page-fade flex flex-col"
+      style={{ background: 'var(--bg)', ...FONT, '--grid-color': 'rgba(204,68,68,0.07)' } as React.CSSProperties}
+    >
 
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">

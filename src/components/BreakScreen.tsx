@@ -57,7 +57,10 @@ export function BreakScreen({
   }
 
   return (
-    <div className="min-h-screen pixel-grid page-fade flex flex-col" style={{ background: 'var(--bg)', ...FONT }}>
+    <div
+      className="min-h-screen pixel-grid page-fade flex flex-col"
+      style={{ background: 'var(--bg)', ...FONT, '--grid-color': isShort ? 'rgba(68,255,136,0.055)' : 'rgba(136,170,255,0.055)' } as React.CSSProperties}
+    >
 
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">

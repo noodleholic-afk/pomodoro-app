@@ -28,11 +28,11 @@ body {
   overflow-x: hidden;
 }
 
-/* ─── 8×8 pixel grid ─── */
+/* ─── 8×8 pixel grid — use --grid-color to tint per screen ─── */
 .pixel-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    linear-gradient(var(--grid-color, rgba(255,255,255,0.018)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color, rgba(255,255,255,0.018)) 1px, transparent 1px);
   background-size: 8px 8px;
 }
 
