@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { UserSettings } from '../types'
 
 interface Props {
@@ -11,10 +11,11 @@ interface Props {
   onLogout: () => void
 }
 
-const FONT = { fontFamily: 'var(--font-pixel)' }
+const FONT = { fontFamily: 'var(--font)' }
+const EM: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, sans-serif' }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-white/50 text-xs mb-1" style={FONT}>{children}</p>
+  return <p style={{ ...FONT, color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 4 }}>{children}</p>
 }
 
 function PixelInput({
@@ -27,8 +28,9 @@ function PixelInput({
 }) {
   return (
     <input
-      style={{ ...FONT, outline: 'none' }}
-      className="w-full bg-white/5 border border-white/20 px-3 py-2.5 text-white text-xs placeholder-white/25 transition-all"
+      style={{ ...FONT, outline: 'none', width: '100%', padding: '8px 12px', fontSize: 11,
+        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)',
+        color: '#fff', borderRadius: 4 }}
       type={type}
       value={value}
       placeholder={placeholder}
@@ -39,7 +41,7 @@ function PixelInput({
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border border-white/10 p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
+    <div style={{ border: '1px solid rgba(255,255,255,0.1)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 4 }}>
       {children}
     </div>
   )
@@ -68,13 +70,13 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
   async function handleLogin() {
     const e = email.trim()
     const p = password.trim()
-    if (!e || !p) { setLoginError('閭鍜屽瘑鐮佷笉鑳戒负绌?); return }
+    if (!e || !p) { setLoginError('邮箱和密码不能为空'); return }
     setLoginLoading(true)
     setLoginError(null)
     try {
       await onLogin(e, p)
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : '鐧诲綍澶辫触锛岃閲嶈瘯')
+      setLoginError(err instanceof Error ? err.message : '登录失败，请重试')
     } finally {
       setLoginLoading(false)
     }
@@ -82,10 +84,10 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
 
   async function handleSave() {
     onSave({
-      notion_token:       notionToken.trim() || null,
-      siliconflow_api_key: siliconKey.trim() || null,
-      ai_model:           aiModel,
-      sound_enabled:      soundEnabled,
+      notion_token:        notionToken.trim() || null,
+      siliconflow_api_key: siliconKey.trim()  || null,
+      ai_model:            aiModel,
+      sound_enabled:       soundEnabled,
     })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -105,121 +107,134 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         boxSizing: 'border-box',
       }}
     >
-      <div className="max-w-md mx-auto px-4 py-8 space-y-6 overflow-y-auto" style={FONT}>
+      <div style={{ ...FONT, maxWidth: 448, margin: '0 auto', padding: '32px 16px', display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', width: '100%' }}>
 
-        {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
-        <div className="flex items-center gap-4">
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button
             onClick={onBack}
-            style={FONT}
-            className="pixel-btn text-white/40 text-xs hover:text-white"
+            style={{ ...FONT, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}
+            className="px-btn"
           >
-            鈫?杩斿洖
+            ← 返回
           </button>
-          <h2 className="text-white text-sm tracking-widest" style={FONT}>鈿?璁剧疆</h2>
+          <h2 style={{ ...FONT, color: '#fff', fontSize: 13, margin: 0 }}>
+            <span style={EM}>⚙</span> 设置
+          </h2>
         </div>
 
-        <hr className="section-divider" />
+        <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
 
-        {/* 鈹€鈹€鈹€ Auth 鈹€鈹€鈹€ */}
+        {/* Auth */}
         <Card>
-          <p className="text-white/60 text-xs" style={FONT}>璐︽埛</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>账户</p>
           {isLoggedIn ? (
-            <div className="flex items-center justify-between">
-              <p className="text-green-400/80 text-xs" style={FONT}>鉁?{userEmail}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ ...FONT, color: '#4ade80', fontSize: 11 }}>
+                <span style={EM}>✓</span> {userEmail}
+              </p>
               <button
                 onClick={onLogout}
-                style={FONT}
-                className="pixel-btn text-red-400/60 text-xs hover:text-red-400"
+                style={{ ...FONT, background: 'none', border: 'none', color: 'rgba(248,113,113,0.6)', fontSize: 11, cursor: 'pointer' }}
+                className="px-btn"
               >
-                閫€鍑?              </button>
+                退出
+              </button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-white/30 text-xs leading-relaxed" style={FONT}>
-                鐧诲綍鍚庡彲璺ㄨ澶囧悓姝ヨ繘搴?              </p>
-              <PixelInput value={email}    onChange={setEmail}    placeholder="閭鍦板潃" type="email" />
-              <PixelInput value={password} onChange={setPassword} placeholder="瀵嗙爜"     type="password" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ ...FONT, color: 'rgba(255,255,255,0.3)', fontSize: 11, lineHeight: 1.8 }}>
+                登录后可跨设备同步进度
+              </p>
+              <PixelInput value={email}    onChange={setEmail}    placeholder="邮箱地址" type="email" />
+              <PixelInput value={password} onChange={setPassword} placeholder="密码"     type="password" />
               {loginError && (
-                <p className="text-red-400/70 text-xs" style={FONT}>{loginError}</p>
+                <p style={{ ...FONT, color: 'rgba(248,113,113,0.7)', fontSize: 11 }}>{loginError}</p>
               )}
               <button
                 onClick={handleLogin}
                 disabled={loginLoading}
-                style={FONT}
-                className="pixel-btn w-full py-3 border border-white/30 bg-white/5 text-white text-xs hover:bg-white/10 disabled:opacity-40"
+                style={{ ...FONT, width: '100%', padding: '12px 0', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 11, cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.4 : 1, borderRadius: 4 }}
+                className="px-btn"
               >
-                {loginLoading ? '鐧诲綍涓?..' : '鐧?褰?/ 娉?鍐?}
+                {loginLoading ? '登录中...' : '登录 / 注册'}
               </button>
             </div>
           )}
         </Card>
 
-        {/* 鈹€鈹€鈹€ Notion Token 鈹€鈹€鈹€ */}
+        {/* Notion Token */}
         <Card>
           <FieldLabel>Notion Integration Token</FieldLabel>
-          <p className="text-white/25 text-xs leading-relaxed" style={FONT}>
-            notion.so/my-integrations 鈫?鍒涘缓 Internal Integration 鈫?澶嶅埗 secret
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 11, lineHeight: 1.8 }}>
+            notion.so/my-integrations → 创建 Internal Integration → 复制 secret
           </p>
           <PixelInput value={notionToken} onChange={setNotionToken} placeholder="secret_..." type="password" />
         </Card>
 
-        {/* 鈹€鈹€鈹€ SiliconFlow 鈹€鈹€鈹€ */}
+        {/* SiliconFlow */}
         <Card>
           <FieldLabel>SiliconFlow API Key</FieldLabel>
-          <p className="text-white/25 text-xs leading-relaxed" style={FONT}>
-            siliconflow.cn 娉ㄥ唽锛屽厤璐归搴﹀彲鐢ㄤ簬 AI 瑙ｆ瀽鐣寗璁板綍
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 11, lineHeight: 1.8 }}>
+            siliconflow.cn 注册，免费额度可用于 AI 解析番茄记录
           </p>
           <PixelInput value={siliconKey} onChange={setSiliconKey} placeholder="sk-..." type="password" />
-          <div className="pt-1 space-y-1">
-            <FieldLabel>AI 妯″瀷</FieldLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <FieldLabel>AI 模型</FieldLabel>
             <select
-              style={{ ...FONT, outline: 'none' }}
-              className="w-full bg-white/5 border border-white/20 px-3 py-2.5 text-white text-xs"
+              style={{ ...FONT, outline: 'none', width: '100%', padding: '8px 12px', fontSize: 11,
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', borderRadius: 4 }}
               value={aiModel}
               onChange={e => setAiModel(e.target.value)}
             >
-              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2锛堟帹鑽愶級</option>
+              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2（推荐）</option>
               <option value="kimi-k2-turbo-preview">Kimi K2 Turbo</option>
               <option value="THUDM/glm-4-9b-chat">GLM-4-9B</option>
             </select>
           </div>
         </Card>
 
-        {/* 鈹€鈹€鈹€ Sound 鈹€鈹€鈹€ */}
+        {/* Sound */}
         <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-white/60 text-xs" style={FONT}>馃攰 闊虫晥</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ ...FONT, color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+              <span style={EM}>🔊</span> 音效
+            </p>
             <button
               onClick={() => setSoundEnabled(v => !v)}
-              className={`pixel-btn relative w-12 h-6 border-2 transition-colors ${
-                soundEnabled ? 'border-white bg-white/15' : 'border-white/25'
-              }`}
+              className="px-btn"
+              style={{
+                position: 'relative', width: 48, height: 24,
+                border: `2px solid ${soundEnabled ? '#fff' : 'rgba(255,255,255,0.25)'}`,
+                background: soundEnabled ? 'rgba(255,255,255,0.15)' : 'transparent',
+                borderRadius: 0, cursor: 'pointer', transition: 'all 0.2s',
+              }}
             >
-              <span
-                className={`absolute top-0.5 w-4 h-4 bg-white transition-all duration-200 ${
-                  soundEnabled ? 'left-6' : 'left-0.5'
-                }`}
-              />
+              <span style={{
+                position: 'absolute', top: 2, width: 16, height: 16, background: '#fff',
+                transition: 'left 0.2s',
+                left: soundEnabled ? 24 : 2,
+              }} />
             </button>
           </div>
         </Card>
 
-        {/* 鈹€鈹€鈹€ Save 鈹€鈹€鈹€ */}
+        {/* Save */}
         <button
           onClick={handleSave}
-          style={FONT}
-          className="pixel-btn w-full py-4 border-2 border-white bg-white text-gray-900 text-xs hover:bg-white/90"
+          style={{ ...FONT, width: '100%', padding: 16, border: '2px solid #fff', background: '#fff', color: '#111', fontSize: 11, cursor: 'pointer', borderRadius: 4 }}
+          className="px-btn"
         >
-          {saved ? '鉁?宸蹭繚瀛? : '淇濆瓨璁剧疆'}
+          {saved ? '✓ 已保存' : '保存设置'}
         </button>
 
-        {/* 鈹€鈹€鈹€ DB info 鈹€鈹€鈹€ */}
-        <div className="border border-white/5 p-4 space-y-1" style={{ background: 'rgba(255,255,255,0.02)' }}>
-          <p className="text-white/20 text-xs mb-2" style={FONT}>鏁版嵁搴?ID锛堥粯璁ゅ€硷級</p>
-          <p className="text-white/15 text-xs" style={FONT}>鐣寗鎴樻姤锛?894953a...</p>
-          <p className="text-white/15 text-xs" style={FONT}>濂芥椂鍏夋棩蹇楋細b6f8a0ec...</p>
-          <p className="text-white/15 text-xs" style={FONT}>PARA+CODE锛歝3c35753...</p>
+        {/* DB info */}
+        <div style={{ border: '1px solid rgba(255,255,255,0.05)', padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.2)', fontSize: 11, marginBottom: 8 }}>数据库 ID（默认值）</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>番茄战报：894953a...</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>好时光日志：b6f8a0ec...</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>PARA+CODE：c3c35753...</p>
         </div>
       </div>
     </div>

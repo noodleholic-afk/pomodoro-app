@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
 import { unlockAudioContext } from '../lib/audio'
 
@@ -13,6 +13,7 @@ interface Props {
 }
 
 const FONT = { fontFamily: 'var(--font)' }
+const EM: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, sans-serif', fontStyle: 'normal' }
 
 function fmt(s: number) {
   const m = Math.floor(s / 60).toString().padStart(2, '0')
@@ -73,10 +74,10 @@ export function BreakScreen({
       } as React.CSSProperties}
     >
 
-      {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">鈽?/span>
+          <span style={EM} className="text-base">⏸</span>
           <span style={{ color: hi, fontSize: 14, ...FONT }}>{label}</span>
         </div>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, ...FONT }}>{minutes}</span>
@@ -84,7 +85,7 @@ export function BreakScreen({
 
       <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {/* 鈹€鈹€鈹€ 4 progress blocks 鈹€鈹€鈹€ */}
+        {/* 4 progress blocks */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '4px 0' }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} style={{
@@ -97,7 +98,7 @@ export function BreakScreen({
           ))}
         </div>
 
-        {/* 鈹€鈹€鈹€ Timer display 鈹€鈹€鈹€ */}
+        {/* Timer display */}
         <div style={{
           background: '#060810',
           border: `3px solid ${border}`,
@@ -127,7 +128,7 @@ export function BreakScreen({
           </span>
         </div>
 
-        {/* 鈹€鈹€鈹€ Progress bar 鈹€鈹€鈹€ */}
+        {/* Progress bar */}
         <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 3, height: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
           <div style={{
             height: '100%', borderRadius: 3,
@@ -138,12 +139,14 @@ export function BreakScreen({
           }} />
         </div>
 
-        {/* 鈹€鈹€鈹€ Checklist (interruptions) 鈹€鈹€鈹€ */}
+        {/* Checklist (interruptions) */}
         {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
           <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', background: 'rgba(255,255,255,0.03)' }}>
             {data.urgentItems.length > 0 && (
               <>
-                <p style={{ ...FONT, fontSize: 12, color: '#ff6666', marginBottom: 6 }}>馃毃 URGENT</p>
+                <p style={{ ...FONT, fontSize: 12, color: '#ff6666', marginBottom: 6 }}>
+                  <span style={EM}>🚨</span> URGENT
+                </p>
                 {data.urgentItems.map(item => (
                   <div
                     key={item.id}
@@ -167,7 +170,9 @@ export function BreakScreen({
             )}
             {data.memoItems.length > 0 && (
               <>
-                <p style={{ ...FONT, fontSize: 12, color: '#aaddff', marginBottom: 6, marginTop: data.urgentItems.length > 0 ? 8 : 0 }}>馃搶 MEMO</p>
+                <p style={{ ...FONT, fontSize: 12, color: '#aaddff', marginBottom: 6, marginTop: data.urgentItems.length > 0 ? 8 : 0 }}>
+                  <span style={EM}>📌</span> MEMO
+                </p>
                 {data.memoItems.map(item => (
                   <div
                     key={item.id}
@@ -192,7 +197,7 @@ export function BreakScreen({
           </div>
         )}
 
-        {/* 鈹€鈹€鈹€ Controls 鈹€鈹€鈹€ */}
+        {/* Controls */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
           {/* PAUSE / RESUME */}
           <button
@@ -204,10 +209,11 @@ export function BreakScreen({
               borderRadius: 8, fontSize: 16,
               background: lo, color: hi,
               boxShadow: `0 0 10px ${hi}33`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            <span>{isRunning ? '鈴?PAUSE' : '鈻?RESUME'}</span>
+            <span style={EM}>{isRunning ? '⏸' : '▶'}</span>
+            {isRunning ? 'PAUSE' : 'RESUME'}
           </button>
 
           {/* SKIP */}
@@ -221,7 +227,7 @@ export function BreakScreen({
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}
           >
-            <span style={{ fontSize: 20 }}>鈴?/span>
+            <span style={{ ...EM, fontSize: 20 }}>⏭</span>
             <span style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>SKIP</span>
           </button>
 
@@ -237,7 +243,7 @@ export function BreakScreen({
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}
           >
-            <span>{soundEnabled ? '馃攰' : '馃攪'}</span>
+            <span style={EM}>{soundEnabled ? '🔊' : '🔇'}</span>
             <span style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
           </button>
         </div>

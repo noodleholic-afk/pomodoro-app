@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
 import { unlockAudioContext } from '../lib/audio'
 
@@ -18,6 +18,7 @@ interface Props {
 
 const FONT = { fontFamily: 'var(--font)' }
 const C    = { background: 'var(--card)' }
+const EM: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, sans-serif', fontStyle: 'normal' }
 
 function fmt(s: number) {
   const m = Math.floor(s / 60).toString().padStart(2, '0')
@@ -63,9 +64,9 @@ function WorkInterruption({
     <div style={{ display: 'flex', gap: 8 }}>
       <div style={half}>
         <button className="px-btn" onClick={() => setUrgentOpen(o => !o)} style={toggleBtn}>
-          <span>馃毃</span>
+          <span style={EM}>🚨</span>
           <span style={{ color: '#ff6666' }}>{urgentItems.length > 0 ? urgentItems.length : 'URGENT'}</span>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{urgentOpen ? '鈻? : '鈻?}</span>
+          <span style={{ ...EM, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{urgentOpen ? '▼' : '▶'}</span>
         </button>
         {urgentOpen && (
           <div style={{ padding: '0 8px 8px' }}>
@@ -89,9 +90,9 @@ function WorkInterruption({
 
       <div style={half}>
         <button className="px-btn" onClick={() => setMemoOpen(o => !o)} style={toggleBtn}>
-          <span>馃搶</span>
+          <span style={EM}>📌</span>
           <span style={{ color: '#aaddff' }}>{memoItems.length > 0 ? memoItems.length : 'MEMO'}</span>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{memoOpen ? '鈻? : '鈻?}</span>
+          <span style={{ ...EM, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{memoOpen ? '▼' : '▶'}</span>
         </button>
         {memoOpen && (
           <div style={{ padding: '0 8px 8px' }}>
@@ -150,10 +151,10 @@ export function Timer({
         '--grid-color': 'rgba(204,68,68,0.07)',
       } as React.CSSProperties}
     >
-      {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">馃崊</span>
+          <span style={EM} className="text-base">🍅</span>
           <span style={{ color: 'var(--work-hi)', fontSize: 14, ...FONT }}>WORK</span>
         </div>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, ...FONT }}>25 MIN</span>
@@ -161,7 +162,7 @@ export function Timer({
 
       <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {/* 鈹€鈹€鈹€ 4 progress blocks 鈹€鈹€鈹€ */}
+        {/* 4 progress blocks */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '4px 0' }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} style={{
@@ -174,19 +175,19 @@ export function Timer({
           ))}
         </div>
 
-        {/* 鈹€鈹€鈹€ Task name 鈹€鈹€鈹€ */}
+        {/* Task name */}
         {data.taskName && (
           <div className="blink-task" style={{
             border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
             background: 'rgba(170,51,51,0.12)',
-            ...FONT, fontSize: 16, color: '#ffaaaa',
+            fontSize: 16, color: '#ffaaaa',
             textAlign: 'center', letterSpacing: '0.05em',
           }}>
             {data.taskName}
           </div>
         )}
 
-        {/* 鈹€鈹€鈹€ Timer display 鈹€鈹€鈹€ */}
+        {/* Timer display */}
         <div style={{
           background: '#060810', border: '3px solid var(--work-border)',
           borderRadius: 8, padding: '20px 12px',
@@ -213,7 +214,7 @@ export function Timer({
           </span>
         </div>
 
-        {/* 鈹€鈹€鈹€ Progress bar 鈹€鈹€鈹€ */}
+        {/* Progress bar */}
         <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 3, height: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
           <div style={{
             height: '100%', background: 'var(--work-hi)', borderRadius: 3,
@@ -223,7 +224,7 @@ export function Timer({
           }} />
         </div>
 
-        {/* 鈹€鈹€鈹€ Interruption inputs 鈹€鈹€鈹€ */}
+        {/* Interruption inputs */}
         <WorkInterruption
           urgentItems={data.urgentItems}
           memoItems={data.memoItems}
@@ -231,7 +232,7 @@ export function Timer({
           onAddMemo={onAddMemo}
         />
 
-        {/* ─── PURGE button ─── */}
+        {/* PURGE button */}
         {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
           <button
             onClick={handlePurge}
@@ -246,11 +247,11 @@ export function Timer({
               transition: 'all 0.15s',
             }}
           >
-            {purgeConfirm ? '⚠ PURGE all notes? (tap again)' : '🗑 PURGE'}
+            <span style={EM}>{purgeConfirm ? '⚠' : '🗑'}</span> {purgeConfirm ? 'PURGE all notes? (tap again)' : 'PURGE'}
           </button>
         )}
 
-        {/* ─── DEBUG SKIP row ─── */}
+        {/* DEBUG SKIP row */}
         <button
           onClick={onSkip}
           className="px-btn"
@@ -261,10 +262,10 @@ export function Timer({
             fontSize: 13, letterSpacing: '0.05em',
           }}
         >
-          ⏭ SKIP WORK (DEBUG)
+          <span style={EM}>⏭</span> SKIP WORK (DEBUG)
         </button>
 
-        {/* 鈹€鈹€鈹€ Controls 鈹€鈹€鈹€ */}
+        {/* Controls */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
           <button
             onClick={withUnlock(isRunning ? onPause : onResume)}
@@ -274,10 +275,11 @@ export function Timer({
               border: '2px solid var(--work-border)', borderRadius: 8, fontSize: 16,
               background: 'var(--work-lo)', color: '#ff8888',
               boxShadow: '0 0 10px rgba(170,51,51,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            {isRunning ? '鈴?PAUSE' : '鈻?RESUME'}
+            <span style={EM}>{isRunning ? '⏸' : '▶'}</span>
+            {isRunning ? 'PAUSE' : 'RESUME'}
           </button>
 
           <button
@@ -290,7 +292,7 @@ export function Timer({
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}
           >
-            <span>{soundEnabled ? '馃攰' : '馃攪'}</span>
+            <span style={EM}>{soundEnabled ? '🔊' : '🔇'}</span>
             <span style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
           </button>
 
@@ -304,7 +306,8 @@ export function Timer({
               fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            鉁?          </button>
+            <span style={EM}>↺</span>
+          </button>
         </div>
       </div>
     </div>
