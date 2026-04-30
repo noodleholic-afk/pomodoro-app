@@ -102,6 +102,7 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <div className="max-w-md mx-auto px-4 py-8 space-y-6 overflow-y-auto" style={FONT}>

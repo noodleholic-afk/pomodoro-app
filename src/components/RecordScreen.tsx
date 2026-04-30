@@ -101,6 +101,7 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         overflow: 'hidden',
+        boxSizing: 'border-box',
         ...FONT,
         '--grid-color': 'rgba(204,68,68,0.07)',
       } as React.CSSProperties}
@@ -117,7 +118,7 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
         )}
       </div>
 
-      <div className="flex-1 flex flex-col px-4 pb-5 gap-3 max-w-md mx-auto w-full overflow-y-auto">
+      <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
         {/* ─── Task name ─── */}
         <div style={{

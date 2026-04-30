@@ -67,6 +67,7 @@ export function BreakScreen({
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         overflow: 'hidden',
+        boxSizing: 'border-box',
         ...FONT,
         '--grid-color': isShort ? 'rgba(68,255,136,0.055)' : 'rgba(136,170,255,0.055)',
       } as React.CSSProperties}
@@ -81,7 +82,7 @@ export function BreakScreen({
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>{minutes}</span>
       </div>
 
-      <div className="flex-1 flex flex-col px-4 pb-5 gap-3 max-w-md mx-auto w-full">
+      <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
         {/* ─── 4 progress blocks ─── */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '4px 0' }}>

@@ -84,6 +84,7 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         overflow: 'hidden',
+        boxSizing: 'border-box',
         ...FONT,
       }}
     >
@@ -102,7 +103,7 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col px-4 pb-6 gap-4 overflow-y-auto max-w-md mx-auto w-full">
+      <div className="flex flex-col px-4 gap-4 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
         {/* ─── Area grid ─── */}
         <div className="rounded-lg border border-white/10 p-3" style={C}>
