@@ -32,6 +32,8 @@ const AREAS = [
   { id: '其他',   emoji: '📦', label: '其他', full: true },
 ] as const
 
+const EM: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, sans-serif' }
+
 const TODAY_KEY = 'today_tasks'
 const FONT = { fontFamily: 'var(--font)' }
 const C = { background: 'var(--card)' }
@@ -171,7 +173,7 @@ export function StartScreen({
 
         {/* ─── Area grid ─── */}
         <div style={CARD_STYLE}>
-          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>领域</p>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}><span className="zh" style={{ fontSize: 14 }}>领域</span></p>
           <div className="grid grid-cols-2 gap-1.5">
             {AREAS.map(area => (
               <button
@@ -185,10 +187,10 @@ export function StartScreen({
                   border: `2px solid ${selectedArea === area.label ? 'var(--work-hi)' : 'rgba(255,255,255,0.12)'}`,
                   color: selectedArea === area.label ? '#ff8888' : 'rgba(255,255,255,0.65)',
                   borderRadius: 6, padding: '8px 10px', textAlign: 'left',
-                  fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
+                  fontSize: 17, cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >
-                {area.emoji} {area.label}
+                <span style={EM}>{area.emoji}</span> <span className="zh">{area.label}</span>
               </button>
             ))}
           </div>
@@ -197,17 +199,17 @@ export function StartScreen({
         {/* ─── Notion tasks ─── */}
         <div style={CARD_STYLE}>
           <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Notion 任务</p>
+            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Notion <span className="zh" style={{ fontSize: 14 }}>任务</span></p>
             {isLoggedIn && (
               <button onClick={fetchTasks} className="px-btn" style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>↻</button>
             )}
           </div>
           {!isLoggedIn ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}>⚙ 登录后显示</p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}><span style={EM}>⚙</span> <span className="zh" style={{ fontSize: 15 }}>登录后显示</span></p>
           ) : loading ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px 0' }}>载入中...</p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>载入中...</span></p>
           ) : tasks.length === 0 ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}>无进行中任务（检查 Settings → Notion Token）</p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>无进行中任务（检查 Settings → Notion Token）</span></p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {tasks.map(task => (
@@ -240,7 +242,7 @@ export function StartScreen({
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <input
               style={{
-                ...FONT, flex: 1, fontSize: 13, padding: '6px 10px',
+                ...FONT, flex: 1, fontSize: 16, padding: '6px 10px',
                 borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none',
               }}
@@ -262,7 +264,7 @@ export function StartScreen({
 
           {/* Task list */}
           {todayTasks.length === 0 ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '2px 0' }}>暂无任务</p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '2px 0' }}><span className="zh" style={{ fontSize: 15 }}>暂无任务</span></p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {todayTasks.map(task => (
@@ -366,7 +368,7 @@ export function StartScreen({
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               style={{
-                ...FONT, flex: 1, fontSize: 13, padding: '8px 12px', color: '#fff',
+                ...FONT, flex: 1, fontSize: 16, padding: '8px 12px', color: '#fff',
                 borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.06)', outline: 'none',
               }}

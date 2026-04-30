@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { RecordData } from '../types'
 import type { TimerData } from '../hooks/useTimer'
@@ -10,11 +10,13 @@ interface Props {
   onBack: () => void
 }
 
-const SCENES  = ['鍦ㄥ', '鍏叡绌洪棿', '鏈変汉闄?, '澶栧嚭鐙'] as const
-const ENERGYS = ['鈫?涓婂崌', '鈫?鎸佸钩', '鈫?涓嬮檷'] as const
+const SCENES  = ['在家', '公共空间', '有人陪', '外出独处'] as const
+const ENERGYS = ['↑ 上升', '→ 持平', '↓ 下降'] as const
 
 const FONT = { fontFamily: 'var(--font)' }
 const C    = { background: 'var(--card)' }
+// Emojis need system-ui so the pixel font doesn't corrupt them
+const EM: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, sans-serif' }
 
 function SelectRow<T extends string>({
   label, options, value, onChange,
@@ -23,7 +25,7 @@ function SelectRow<T extends string>({
 }) {
   return (
     <div>
-      <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>{label}</p>
+      <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>{label}</p>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {options.map(opt => (
           <button
@@ -31,12 +33,14 @@ function SelectRow<T extends string>({
             onClick={() => onChange(value === opt ? null : opt)}
             className="px-btn"
             style={{
-              ...FONT, fontSize: 12, padding: '5px 10px', borderRadius: 4,
+              ...FONT,
+              fontSize: 19,
+              padding: '5px 10px', borderRadius: 4,
               border: `1px solid ${value === opt ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
               background: value === opt ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
               color: value === opt ? '#fff' : 'rgba(255,255,255,0.5)',
             }}
-          >{opt}</button>
+          ><span className="zh">{opt}</span></button>
         ))}
       </div>
     </div>
@@ -107,10 +111,10 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
       } as React.CSSProperties}
     >
 
-      {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
+      {/* ─── Header ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">馃崊</span>
+          <span style={EM} className="text-base">🍅</span>
           <span style={{ color: 'var(--work-hi)', fontSize: 14, ...FONT }}>RECORD</span>
         </div>
         {completedPomodoros > 0 && (
@@ -118,23 +122,28 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
         )}
       </div>
 
-      <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div
+        className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full"
+        style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
+      >
 
-        {/* 鈹€鈹€鈹€ Task name 鈹€鈹€鈹€ */}
+        {/* ─── Task name ─── */}
         <div style={{
           border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
           background: 'rgba(170,51,51,0.12)',
-          ...FONT, fontSize: 16, color: '#ffaaaa', textAlign: 'center',
+          fontSize: 16, color: '#ffaaaa', textAlign: 'center',
         }}>
           {timerData.taskName}
         </div>
 
-        {/* 鈹€鈹€鈹€ All fields in one card 鈹€鈹€鈹€ */}
+        {/* ─── All fields ─── */}
         <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '12px', ...C, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* WHAT DID YOU DO */}
           <div>
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>鉁嶏笍 WHAT DID YOU DO</p>
+            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+              <span style={EM}>✏️</span> WHAT DID YOU DO
+            </p>
             <textarea
               style={{
                 ...FONT, fontSize: 14, color: '#fff',
@@ -151,7 +160,9 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
 
           {/* FOCUS (1-5) */}
           <div>
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>鈿?FOCUS (1-5)</p>
+            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+              <span style={EM}>⚡</span> FOCUS (1-5)
+            </p>
             <div style={{ display: 'flex', gap: 6 }}>
               {[1,2,3,4,5].map(v => (
                 <button
@@ -165,19 +176,19 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
                     transition: 'color 0.15s',
                   }}
                 >
-                  {v <= (focus ?? 0) ? '鈽? : '鈽?}
+                  {v <= (focus ?? 0) ? '★' : '☆'}
                 </button>
               ))}
             </div>
           </div>
 
           {/* SCENE */}
-          <SelectRow label="馃彔 SCENE" options={SCENES} value={scene} onChange={setScene} />
+          <SelectRow label="🏠 SCENE" options={SCENES} value={scene} onChange={setScene} />
 
           {/* ENERGY */}
-          <SelectRow label="鈿?ENERGY" options={ENERGYS} value={energy} onChange={setEnergy} />
+          <SelectRow label="⚡ ENERGY" options={ENERGYS} value={energy} onChange={setEnergy} />
 
-          {/* Write to Good Time Log checkbox */}
+          {/* Write to Good Time Log */}
           <div
             onClick={() => setWriteGoodtime(v => !v)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', paddingTop: 4 }}
@@ -189,17 +200,19 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
               transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {writeGoodtime && <span style={{ fontSize: 13, color: '#000', lineHeight: 1 }}>鉁?/span>}
+              {writeGoodtime && <span style={{ fontSize: 10, color: '#000', lineHeight: 1 }}>✓</span>}
             </div>
-            <span style={{ ...FONT, fontSize: 12, color: writeGoodtime ? '#ffcc44' : 'rgba(255,255,255,0.5)' }}>
-              馃専 WRITE TO GOOD TIME LOG
+            <span style={{ ...FONT, fontSize: 11, color: writeGoodtime ? '#ffcc44' : 'rgba(255,255,255,0.5)' }}>
+              <span style={EM}>⭐</span> WRITE TO GOOD TIME LOG
             </span>
           </div>
         </div>
 
-        {/* 鈹€鈹€鈹€ AI PARSE 鈹€鈹€鈹€ */}
+        {/* ─── AI PARSE ─── */}
         <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', ...C }}>
-          <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>鉁?AI PARSE</p>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+            <span style={EM}>✨</span> AI PARSE
+          </p>
           <div style={{ display: 'flex', gap: 6 }}>
             <input
               style={{
@@ -223,12 +236,12 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
                 color: aiLoading ? 'rgba(255,255,255,0.3)' : '#fff',
               }}
             >
-              {aiLoading ? '...' : '鈫?}
+              {aiLoading ? '...' : '→'}
             </button>
           </div>
         </div>
 
-        {/* 鈹€鈹€鈹€ Action buttons 鈹€鈹€鈹€ */}
+        {/* ─── Action buttons ─── */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 4 }}>
           <button
             onClick={onBack}
@@ -237,10 +250,10 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
               ...FONT, flex: 1, padding: '14px 0',
               border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
               background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)',
-              fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            鈫?RESTART
+            <span style={EM}>←</span> RESTART
           </button>
           <button
             onClick={handleSubmit}
@@ -249,11 +262,11 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
               ...FONT, flex: 2, padding: '14px 0',
               border: '2px solid var(--work-hi)', borderRadius: 8,
               background: 'var(--work-lo)', color: '#ff8888',
-              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               boxShadow: '0 0 10px rgba(204,68,68,0.3)',
             }}
           >
-            鉁?SUBMIT
+            <span style={EM}>✓</span> SUBMIT
           </button>
         </div>
 

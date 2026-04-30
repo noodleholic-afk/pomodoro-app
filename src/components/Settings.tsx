@@ -116,10 +116,10 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
             style={{ ...FONT, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}
             className="px-btn"
           >
-            ← 返回
+            ← <span className="zh" style={{ fontSize: 14 }}>返回</span>
           </button>
           <h2 style={{ ...FONT, color: '#fff', fontSize: 13, margin: 0 }}>
-            <span style={EM}>⚙</span> 设置
+            <span style={EM}>⚙</span> <span className="zh" style={{ fontSize: 16 }}>设置</span>
           </h2>
         </div>
 
@@ -127,7 +127,7 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
 
         {/* Auth */}
         <Card>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>账户</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.6)', fontSize: 11 }}><span className="zh" style={{ fontSize: 14 }}>账户</span></p>
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <p style={{ ...FONT, color: '#4ade80', fontSize: 11 }}>
@@ -138,26 +138,26 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
                 style={{ ...FONT, background: 'none', border: 'none', color: 'rgba(248,113,113,0.6)', fontSize: 11, cursor: 'pointer' }}
                 className="px-btn"
               >
-                退出
+                <span className="zh" style={{ fontSize: 14 }}>退出</span>
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ ...FONT, color: 'rgba(255,255,255,0.3)', fontSize: 11, lineHeight: 1.8 }}>
-                登录后可跨设备同步进度
+              <p style={{ ...FONT, color: 'rgba(255,255,255,0.3)', fontSize: 14, lineHeight: 1.8 }}>
+                <span className="zh">登录后可跨设备同步进度</span>
               </p>
               <PixelInput value={email}    onChange={setEmail}    placeholder="邮箱地址" type="email" />
               <PixelInput value={password} onChange={setPassword} placeholder="密码"     type="password" />
               {loginError && (
-                <p style={{ ...FONT, color: 'rgba(248,113,113,0.7)', fontSize: 11 }}>{loginError}</p>
+                <p style={{ ...FONT, color: 'rgba(248,113,113,0.7)', fontSize: 14 }}><span className="zh">{loginError}</span></p>
               )}
               <button
                 onClick={handleLogin}
                 disabled={loginLoading}
-                style={{ ...FONT, width: '100%', padding: '12px 0', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 11, cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.4 : 1, borderRadius: 4 }}
+                style={{ ...FONT, width: '100%', padding: '12px 0', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 14, cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.4 : 1, borderRadius: 4 }}
                 className="px-btn"
               >
-                {loginLoading ? '登录中...' : '登录 / 注册'}
+                <span className="zh">{loginLoading ? '登录中...' : '登录 / 注册'}</span>
               </button>
             </div>
           )}
@@ -166,8 +166,8 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         {/* Notion Token */}
         <Card>
           <FieldLabel>Notion Integration Token</FieldLabel>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 11, lineHeight: 1.8 }}>
-            notion.so/my-integrations → 创建 Internal Integration → 复制 secret
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 14, lineHeight: 1.8 }}>
+            <span className="zh">notion.so/my-integrations → 创建 Internal Integration → 复制 secret</span>
           </p>
           <PixelInput value={notionToken} onChange={setNotionToken} placeholder="secret_..." type="password" />
         </Card>
@@ -175,12 +175,12 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         {/* SiliconFlow */}
         <Card>
           <FieldLabel>SiliconFlow API Key</FieldLabel>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 11, lineHeight: 1.8 }}>
-            siliconflow.cn 注册，免费额度可用于 AI 解析番茄记录
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.25)', fontSize: 14, lineHeight: 1.8 }}>
+            <span className="zh">siliconflow.cn 注册，免费额度可用于 AI 解析番茄记录</span>
           </p>
           <PixelInput value={siliconKey} onChange={setSiliconKey} placeholder="sk-..." type="password" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <FieldLabel>AI 模型</FieldLabel>
+            <FieldLabel>AI <span className="zh" style={{ fontSize: 14 }}>模型</span></FieldLabel>
             <select
               style={{ ...FONT, outline: 'none', width: '100%', padding: '8px 12px', fontSize: 11,
                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)',
@@ -188,7 +188,7 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
               value={aiModel}
               onChange={e => setAiModel(e.target.value)}
             >
-              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2（推荐）</option>
+              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2 (推荐)</option>
               <option value="kimi-k2-turbo-preview">Kimi K2 Turbo</option>
               <option value="THUDM/glm-4-9b-chat">GLM-4-9B</option>
             </select>
@@ -199,7 +199,7 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p style={{ ...FONT, color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
-              <span style={EM}>🔊</span> 音效
+              <span style={EM}>🔊</span> <span className="zh" style={{ fontSize: 14 }}>音效</span>
             </p>
             <button
               onClick={() => setSoundEnabled(v => !v)}
@@ -223,18 +223,18 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
         {/* Save */}
         <button
           onClick={handleSave}
-          style={{ ...FONT, width: '100%', padding: 16, border: '2px solid #fff', background: '#fff', color: '#111', fontSize: 11, cursor: 'pointer', borderRadius: 4 }}
+          style={{ ...FONT, width: '100%', padding: 16, border: '2px solid #fff', background: '#fff', color: '#111', fontSize: 14, cursor: 'pointer', borderRadius: 4 }}
           className="px-btn"
         >
-          {saved ? '✓ 已保存' : '保存设置'}
+          <span className="zh">{saved ? '✓ 已保存' : '保存设置'}</span>
         </button>
 
         {/* DB info */}
         <div style={{ border: '1px solid rgba(255,255,255,0.05)', padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.2)', fontSize: 11, marginBottom: 8 }}>数据库 ID（默认值）</p>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>番茄战报：894953a...</p>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>好时光日志：b6f8a0ec...</p>
-          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 11 }}>PARA+CODE：c3c35753...</p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.2)', fontSize: 14, marginBottom: 8 }}><span className="zh">数据库 ID（默认值）</span></p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 14 }}><span className="zh">番茄战报：894953a...</span></p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 14 }}><span className="zh">好时光日志：b6f8a0ec...</span></p>
+          <p style={{ ...FONT, color: 'rgba(255,255,255,0.15)', fontSize: 14 }}><span className="zh">PARA+CODE：c3c35753...</span></p>
         </div>
       </div>
     </div>

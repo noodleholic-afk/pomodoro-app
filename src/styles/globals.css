@@ -116,6 +116,13 @@ input:focus, textarea:focus, select:focus {
 }
 ::placeholder { color: rgba(255,255,255,0.25); }
 
+/* ─── Chinese text offset — system-ui baseline sits lower than Press Start 2P ─── */
+.zh {
+  position: relative;
+  top: -2px;
+  display: inline-block;
+}
+
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
