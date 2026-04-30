@@ -119,8 +119,9 @@ input:focus, textarea:focus, select:focus {
 /* ─── Chinese text offset — system-ui baseline sits lower than Press Start 2P ─── */
 .zh {
   position: relative;
-  top: -2px;
+  top: -4px;
   display: inline-block;
+  letter-spacing: 0.08em;
 }
 
 /* ─── Scrollbar ─── */

@@ -305,8 +305,6 @@ export function StartScreen({
         {/* ─── BACKLOG (interruptions from last session) ─── */}
         {hasBacklog && (
           <div style={CARD_STYLE}>
-            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>⚡ BACKLOG</p>
-
             {urgentItems.length > 0 && (
               <>
                 <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 6 }}>🚨 URGENT</p>
