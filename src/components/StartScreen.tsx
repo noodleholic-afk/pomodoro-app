@@ -16,8 +16,6 @@ interface Props {
   onOpenSettings: () => void
   completedPomodoros: number
   isLoggedIn?: boolean
-  urgentItems?: { id: string; text: string }[]
-  memoItems?: { id: string; text: string }[]
 }
 
 const AREAS = [
@@ -51,7 +49,6 @@ function saveTodayTasks(tasks: TodayTask[]) {
 export function StartScreen({
   prefillTask, prefillArea, prefillTaskId,
   onStart, onOpenSettings, completedPomodoros, isLoggedIn,
-  urgentItems = [], memoItems = [],
 }: Props) {
   const [taskName,     setTaskName]     = useState(prefillTask   || '')
   const [taskId,       setTaskId]       = useState(prefillTaskId || '')
@@ -61,8 +58,6 @@ export function StartScreen({
   // TODAY'S TASKS
   const [todayTasks,  setTodayTasks]   = useState<TodayTask[]>(loadTodayTasks)
   const [todayInput,  setTodayInput]   = useState('')
-  // BACKLOG: track which items were pushed to today
-  const [pushedIds,   setPushedIds]    = useState<Set<string>>(new Set())
 
   const { tasks, loading, fetchTasks } = useNotionTasks()
 
@@ -126,18 +121,6 @@ export function StartScreen({
     setTaskName(task.text)
     setTaskId('')
   }
-
-  // BACKLOG → TODAY push
-  function pushToToday(id: string, text: string) {
-    setPushedIds(prev => new Set([...prev, id]))
-    setTodayTasks(prev => {
-      // Avoid duplicate
-      if (prev.some(t => t.text === text && !t.done)) return prev
-      return [...prev, { id: crypto.randomUUID(), text, done: false }]
-    })
-  }
-
-  const hasBacklog = urgentItems.length > 0 || memoItems.length > 0
 
   return (
     <div
@@ -301,65 +284,6 @@ export function StartScreen({
             </div>
           )}
         </div>
-
-        {/* ─── BACKLOG (interruptions from last session) ─── */}
-        {hasBacklog && (
-          <div style={CARD_STYLE}>
-            {urgentItems.length > 0 && (
-              <>
-                <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 6 }}>🚨 URGENT</p>
-                {urgentItems.map(item => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      ...FONT, flex: 1, fontSize: 13,
-                      color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
-                    }}>
-                      {pushedIds.has(item.id) ? '✓ ' : ''}{item.text}
-                    </span>
-                    <button
-                      onClick={() => pushToToday(item.id, item.text)}
-                      disabled={pushedIds.has(item.id)}
-                      className="px-btn"
-                      style={{
-                        ...FONT, fontSize: 13, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        background: pushedIds.has(item.id) ? 'transparent' : 'rgba(255,255,255,0.06)',
-                        color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
-                      }}
-                    >→</button>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {memoItems.length > 0 && (
-              <>
-                <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 6, marginTop: urgentItems.length > 0 ? 8 : 0 }}>📌 MEMO</p>
-                {memoItems.map(item => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      ...FONT, flex: 1, fontSize: 13,
-                      color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
-                    }}>
-                      {pushedIds.has(item.id) ? '✓ ' : ''}{item.text}
-                    </span>
-                    <button
-                      onClick={() => pushToToday(item.id, item.text)}
-                      disabled={pushedIds.has(item.id)}
-                      className="px-btn"
-                      style={{
-                        ...FONT, fontSize: 13, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        background: pushedIds.has(item.id) ? 'transparent' : 'rgba(255,255,255,0.06)',
-                        color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
-                      }}
-                    >→</button>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        )}
 
         {/* ─── Manual input + AI button ─── */}
         <div style={CARD_STYLE}>

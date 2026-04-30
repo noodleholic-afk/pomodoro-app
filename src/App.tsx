@@ -448,8 +448,6 @@ export default function App() {
       onOpenSettings={() => setScreen('settings')}
       completedPomodoros={completedPomodoros}
       isLoggedIn={!!userId}
-      urgentItems={timer.data.urgentItems}
-      memoItems={timer.data.memoItems}
     />
   )
 }
