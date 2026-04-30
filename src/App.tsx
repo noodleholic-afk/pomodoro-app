@@ -123,6 +123,14 @@ export default function App() {
     }
   }, [])
 
+  // Request notification permission for lock-screen alarms.
+  // Web Audio is silenced when screen is locked; Notification API works reliably.
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {/* ignore */})
+    }
+  }, [])
+
   /**
    * Remote session handler.
    * Guard: if we're currently on record/settings, DON'T override screen or restore timer
@@ -255,11 +263,19 @@ export default function App() {
       clearLocal()
       // Clear end_time so self-triggered Realtime won't pull back to timer
       upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
+      // Notify user (works even when screen is locked)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🍅 番茄完成！', { body: '去记录吧' })
+      }
     } else {
       // Break done 鈫?reset and go to StartScreen to re-select task
       timerRef.current?.reset()
       setScreen('start')
       clearLocal()
+      // Notify user
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('☕ 休息结束！', { body: '准备下一个番茄' })
+      }
     }
   }, [])
 
