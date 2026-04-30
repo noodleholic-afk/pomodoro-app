@@ -169,11 +169,20 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       remaining: total,
       totalSeconds: total,
       startedAt: null,
-      urgentItems: [],
-      memoItems: [],
+      // urgentItems / memoItems are intentionally kept across cycles.
+      // Use clearInterruptions() to explicitly purge them.
     }
     setData(next)
     onSessionChange({ ...next, endTime: null, pauseRemaining: null })
+  }, [onSessionChange])
+
+  /** Explicitly clear all interruption notes. Called only by PURGE button. */
+  const clearInterruptions = useCallback(() => {
+    setData(prev => {
+      const updated = { ...prev, urgentItems: [], memoItems: [] }
+      onSessionChange({ interruptions_urgent: [], interruptions_memo: [] } as any)
+      return updated
+    })
   }, [onSessionChange])
 
   const startNextPhase = useCallback((completedPomodoros: number) => {
@@ -228,6 +237,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     skipBreak,
     addUrgent,
     addMemo,
+    clearInterruptions,
     restoreSession,
   }
 }

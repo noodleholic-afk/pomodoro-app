@@ -404,6 +404,7 @@ export default function App() {
         onToggleSound={() => setSoundEnabled(v => !v)}
         onAddUrgent={timer.addUrgent}
         onAddMemo={timer.addMemo}
+        onPurge={timer.clearInterruptions}
       />
     )
   }
@@ -431,6 +432,8 @@ export default function App() {
       onOpenSettings={() => setScreen('settings')}
       completedPomodoros={completedPomodoros}
       isLoggedIn={!!userId}
+      urgentItems={timer.data.urgentItems}
+      memoItems={timer.data.memoItems}
     />
   )
 }

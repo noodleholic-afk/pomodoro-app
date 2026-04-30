@@ -1,6 +1,12 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNotionTasks } from '../hooks/useNotionTasks'
 import { supabase } from '../lib/supabase'
+
+interface TodayTask {
+  id: string
+  text: string
+  done: boolean
+}
 
 interface Props {
   prefillTask?: string
@@ -10,39 +16,64 @@ interface Props {
   onOpenSettings: () => void
   completedPomodoros: number
   isLoggedIn?: boolean
+  urgentItems?: { id: string; text: string }[]
+  memoItems?: { id: string; text: string }[]
 }
 
 const AREAS = [
-  { id: '姹傝亴',  emoji: '馃攳', label: '姹傝亴' },
-  { id: '韬績',  emoji: '馃挌', label: '韬績' },
-  { id: '浜虹敓OS',emoji: '馃', label: '浜虹敓OS' },
-  { id: '鍏艰亴',  emoji: '馃彧', label: '鍏艰亴' },
-  { id: '璐㈠姟',  emoji: '馃挵', label: '璐㈠姟' },
-  { id: '鐢熸椿',  emoji: '馃彔', label: '鐢熸椿' },
-  { id: '鍏磋叮',  emoji: '馃拑', label: '鍏磋叮' },
-  { id: '鍏崇郴',  emoji: '馃懃', label: '鍏崇郴' },
-  { id: '鍏朵粬',  emoji: '馃摝', label: '鍏朵粬', full: true },
+  { id: '求职',   emoji: '🔍', label: '求职' },
+  { id: '身心',   emoji: '💚', label: '身心' },
+  { id: '人生OS', emoji: '🪢', label: '人生OS' },
+  { id: '兼职',   emoji: '🏪', label: '兼职' },
+  { id: '财务',   emoji: '💰', label: '财务' },
+  { id: '生活',   emoji: '🏠', label: '生活' },
+  { id: '兴趣',   emoji: '💃', label: '兴趣' },
+  { id: '关系',   emoji: '👥', label: '关系' },
+  { id: '其他',   emoji: '📦', label: '其他', full: true },
 ] as const
 
+const TODAY_KEY = 'today_tasks'
 const FONT = { fontFamily: 'var(--font)' }
 const C = { background: 'var(--card)' }
+const CARD_STYLE = {
+  borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', padding: 12, ...C,
+}
 
-export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, onOpenSettings, completedPomodoros, isLoggedIn }: Props) {
-  const [taskName,     setTaskName]     = useState(prefillTask    || '')
-  const [taskId,       setTaskId]       = useState(prefillTaskId  || '')
-  const [selectedArea, setSelectedArea] = useState(prefillArea    || '')
+function loadTodayTasks(): TodayTask[] {
+  try { return JSON.parse(localStorage.getItem(TODAY_KEY) || '[]') } catch { return [] }
+}
+function saveTodayTasks(tasks: TodayTask[]) {
+  try { localStorage.setItem(TODAY_KEY, JSON.stringify(tasks)) } catch {}
+}
+
+export function StartScreen({
+  prefillTask, prefillArea, prefillTaskId,
+  onStart, onOpenSettings, completedPomodoros, isLoggedIn,
+  urgentItems = [], memoItems = [],
+}: Props) {
+  const [taskName,     setTaskName]     = useState(prefillTask   || '')
+  const [taskId,       setTaskId]       = useState(prefillTaskId || '')
+  const [selectedArea, setSelectedArea] = useState(prefillArea   || '')
   const [aiLoading,    setAiLoading]    = useState(false)
+
+  // TODAY'S TASKS
+  const [todayTasks,  setTodayTasks]   = useState<TodayTask[]>(loadTodayTasks)
+  const [todayInput,  setTodayInput]   = useState('')
+  // BACKLOG: track which items were pushed to today
+  const [pushedIds,   setPushedIds]    = useState<Set<string>>(new Set())
 
   const { tasks, loading, fetchTasks } = useNotionTasks()
 
   useEffect(() => { fetchTasks() }, [])
+
+  // Persist today tasks
+  useEffect(() => { saveTodayTasks(todayTasks) }, [todayTasks])
 
   const canStart = taskName.trim().length > 0
 
   function selectTask(task: { id: string; name: string; area: string }) {
     setTaskName(task.name)
     setTaskId(task.id)
-    // Try to auto-select area button
     const match = AREAS.find(a => task.area.includes(a.label) || task.area.includes(a.emoji))
     if (match) setSelectedArea(match.label)
     else if (task.area) setSelectedArea(task.area)
@@ -73,6 +104,39 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
     if (prefillTask) window.history.replaceState({}, '', '/')
   }
 
+  // TODAY'S TASKS helpers
+  function addTodayTask() {
+    const text = todayInput.trim()
+    if (!text) return
+    setTodayTasks(prev => [...prev, { id: crypto.randomUUID(), text, done: false }])
+    setTodayInput('')
+  }
+
+  function toggleTodayDone(id: string) {
+    setTodayTasks(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, done: !t.done } : t)
+      // Move done to bottom
+      return [...updated.filter(t => !t.done), ...updated.filter(t => t.done)]
+    })
+  }
+
+  function selectTodayTask(task: TodayTask) {
+    setTaskName(task.text)
+    setTaskId('')
+  }
+
+  // BACKLOG → TODAY push
+  function pushToToday(id: string, text: string) {
+    setPushedIds(prev => new Set([...prev, id]))
+    setTodayTasks(prev => {
+      // Avoid duplicate
+      if (prev.some(t => t.text === text && !t.done)) return prev
+      return [...prev, { id: crypto.randomUUID(), text, done: false }]
+    })
+  }
+
+  const hasBacklog = urgentItems.length > 0 || memoItems.length > 0
+
   return (
     <div
       className="pixel-grid page-fade"
@@ -89,30 +153,31 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
       }}
     >
 
-      {/* 鈹€鈹€鈹€ Header bar 鈹€鈹€鈹€ */}
+      {/* ─── Header bar ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">馃崊</span>
-          <span className="text-white/60 text-xs">POMO</span>
+          <span className="text-base">🍅</span>
+          <span style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>POMO</span>
         </div>
         <div className="flex items-center gap-3">
           {completedPomodoros > 0 && (
-            <span className="text-white/40 text-xs">#{completedPomodoros}</span>
+            <span style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>#{completedPomodoros}</span>
           )}
-          <button onClick={onOpenSettings} className="px-btn text-white/40 hover:text-white text-base">鈿?/button>
+          <button onClick={onOpenSettings} className="px-btn text-white/40 hover:text-white text-base">⚙</button>
         </div>
       </div>
 
       <div className="flex flex-col px-4 gap-4 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {/* 鈹€鈹€鈹€ Area grid 鈹€鈹€鈹€ */}
-        <div className="rounded-lg border border-white/10 p-3" style={C}>
-          <p className="text-white/40 text-xs mb-2" style={FONT}>棰嗗煙</p>
+        {/* ─── Area grid ─── */}
+        <div style={CARD_STYLE}>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>领域</p>
           <div className="grid grid-cols-2 gap-1.5">
             {AREAS.map(area => (
               <button
                 key={area.id}
                 onClick={() => toggleArea(area.label)}
+                className="px-btn"
                 style={{
                   ...FONT,
                   gridColumn: 'full' in area ? '1 / -1' : undefined,
@@ -122,7 +187,6 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
                   borderRadius: 6, padding: '8px 10px', textAlign: 'left',
                   fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
                 }}
-                className="px-btn"
               >
                 {area.emoji} {area.label}
               </button>
@@ -130,29 +194,30 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
           </div>
         </div>
 
-        {/* 鈹€鈹€鈹€ Notion tasks 鈹€鈹€鈹€ */}
-        <div className="rounded-lg border border-white/10 p-3" style={C}>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs" style={FONT}>Notion 浠诲姟</p>
+        {/* ─── Notion tasks ─── */}
+        <div style={CARD_STYLE}>
+          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Notion 任务</p>
             {isLoggedIn && (
-              <button onClick={fetchTasks} className="px-btn text-white/25 text-xs" style={FONT}>鈫?/button>
+              <button onClick={fetchTasks} className="px-btn" style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>↻</button>
             )}
           </div>
           {!isLoggedIn ? (
-            <p className="text-white/20 text-xs py-1" style={FONT}>鈿?鐧诲綍鍚庢樉绀?/p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}>⚙ 登录后显示</p>
           ) : loading ? (
-            <p className="text-white/25 text-xs py-1" style={FONT}>杞藉叆涓?..</p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px 0' }}>载入中...</p>
           ) : tasks.length === 0 ? (
-            <p className="text-white/20 text-xs py-1" style={FONT}>鏃犺繘琛屼腑浠诲姟锛堟鏌?Settings 鈫?Notion Token锛?/p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}>无进行中任务（检查 Settings → Notion Token）</p>
           ) : (
-            <div className="space-y-1.5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {tasks.map(task => (
                 <button
                   key={task.id}
                   onClick={() => selectTask(task)}
-                  className="px-btn w-full text-left px-3 py-2 text-xs"
+                  className="px-btn w-full text-left"
                   style={{
-                    ...FONT,
+                    ...FONT, fontSize: 13,
+                    padding: '8px 12px',
                     background: taskId === task.id ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
                     border: `2px solid ${taskId === task.id ? 'var(--work-border)' : 'rgba(255,255,255,0.1)'}`,
                     color: taskId === task.id ? '#ffaaaa' : 'rgba(255,255,255,0.7)',
@@ -160,20 +225,152 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
                   }}
                 >
                   <div className="truncate">{task.name}</div>
-                  {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, marginTop: 2 }}>{task.area}</div>}
+                  {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 2 }}>{task.area}</div>}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* 鈹€鈹€鈹€ Manual input + AI button 鈹€鈹€鈹€ */}
-        <div className="rounded-lg border border-white/10 p-3" style={C}>
-          <div className="flex gap-2">
+        {/* ─── TODAY'S TASKS ─── */}
+        <div style={CARD_STYLE}>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>📋 TODAY'S TASKS</p>
+
+          {/* Input row */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <input
-              className="flex-1 px-3 py-2 text-white text-xs"
-              style={{ ...FONT, borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)' }}
-              placeholder="鎵嬪姩杈撳叆浠诲姟鍚嶇О..."
+              style={{
+                ...FONT, flex: 1, fontSize: 13, padding: '6px 10px',
+                borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none',
+              }}
+              placeholder="添加任务..."
+              value={todayInput}
+              onChange={e => setTodayInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addTodayTask()}
+            />
+            <button
+              onClick={addTodayTask}
+              className="px-btn"
+              style={{
+                padding: '6px 12px', fontSize: 16, borderRadius: 6,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.08)', color: '#fff', flexShrink: 0,
+              }}
+            >+</button>
+          </div>
+
+          {/* Task list */}
+          {todayTasks.length === 0 ? (
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '2px 0' }}>暂无任务</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {todayTasks.map(task => (
+                <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Checkbox */}
+                  <div
+                    onClick={() => toggleTodayDone(task.id)}
+                    style={{
+                      width: 14, height: 14, borderRadius: 3, flexShrink: 0, cursor: 'pointer',
+                      border: `2px solid ${task.done ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.4)'}`,
+                      background: task.done ? 'rgba(255,255,255,0.15)' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {task.done && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>✓</span>}
+                  </div>
+                  {/* Task name — click to select */}
+                  <button
+                    onClick={() => selectTodayTask(task)}
+                    className="px-btn"
+                    style={{
+                      ...FONT, flex: 1, textAlign: 'left', fontSize: 13,
+                      padding: '6px 10px', borderRadius: 6,
+                      background: taskName === task.text && !taskId ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
+                      border: `2px solid ${taskName === task.text && !taskId ? 'var(--work-border)' : 'rgba(255,255,255,0.08)'}`,
+                      color: task.done ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.75)',
+                      textDecoration: task.done ? 'line-through' : 'none',
+                    }}
+                  >
+                    {task.text}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ─── BACKLOG (interruptions from last session) ─── */}
+        {hasBacklog && (
+          <div style={CARD_STYLE}>
+            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>⚡ BACKLOG</p>
+
+            {urgentItems.length > 0 && (
+              <>
+                <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 6 }}>🚨 URGENT</p>
+                {urgentItems.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      ...FONT, flex: 1, fontSize: 13,
+                      color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
+                    }}>
+                      {pushedIds.has(item.id) ? '✓ ' : ''}{item.text}
+                    </span>
+                    <button
+                      onClick={() => pushToToday(item.id, item.text)}
+                      disabled={pushedIds.has(item.id)}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 13, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: pushedIds.has(item.id) ? 'transparent' : 'rgba(255,255,255,0.06)',
+                        color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
+                      }}
+                    >→</button>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {memoItems.length > 0 && (
+              <>
+                <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 6, marginTop: urgentItems.length > 0 ? 8 : 0 }}>📌 MEMO</p>
+                {memoItems.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      ...FONT, flex: 1, fontSize: 13,
+                      color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
+                    }}>
+                      {pushedIds.has(item.id) ? '✓ ' : ''}{item.text}
+                    </span>
+                    <button
+                      onClick={() => pushToToday(item.id, item.text)}
+                      disabled={pushedIds.has(item.id)}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 13, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: pushedIds.has(item.id) ? 'transparent' : 'rgba(255,255,255,0.06)',
+                        color: pushedIds.has(item.id) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
+                      }}
+                    >→</button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ─── Manual input + AI button ─── */}
+        <div style={CARD_STYLE}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              style={{
+                ...FONT, flex: 1, fontSize: 13, padding: '8px 12px', color: '#fff',
+                borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.06)', outline: 'none',
+              }}
+              placeholder="手动输入任务名称..."
               value={taskName}
               onChange={e => { setTaskName(e.target.value); setTaskId('') }}
               onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
@@ -182,31 +379,38 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
             <button
               onClick={handleAI}
               disabled={!taskName.trim() || aiLoading}
-              className="px-btn px-3 py-2 text-base"
-              style={{ border: '2px solid rgba(255,255,255,0.2)', borderRadius: 6, background: 'rgba(255,255,255,0.06)' }}
-              title="AI 璇嗗埆"
+              className="px-btn"
+              style={{
+                padding: '8px 12px', fontSize: 16,
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderRadius: 6, background: 'rgba(255,255,255,0.06)',
+              }}
+              title="AI 识别"
             >
-              {aiLoading ? '...' : '鉁?}
+              {aiLoading ? '...' : '✨'}
             </button>
           </div>
         </div>
 
-        {/* 鈹€鈹€鈹€ START 鈹€鈹€鈹€ */}
+        {/* ─── START ─── */}
         <button
           onClick={handleStart}
           disabled={!canStart}
-          className="px-btn w-full py-4 text-sm tracking-widest"
+          className="px-btn w-full"
           style={{
-            ...FONT,
+            ...FONT, padding: '16px 0', fontSize: 16,
+            letterSpacing: '0.08em',
             border: `3px solid ${canStart ? 'var(--work-hi)' : 'rgba(255,255,255,0.15)'}`,
             background: canStart ? 'var(--work-lo)' : 'transparent',
             color: canStart ? '#ff8888' : 'rgba(255,255,255,0.2)',
             borderRadius: 8,
             boxShadow: canStart ? '0 0 12px rgba(204,68,68,0.3)' : 'none',
+            marginBottom: 16,
           }}
         >
-          鈻?START
+          ▶ START
         </button>
+
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ interface Props {
   onToggleSound: () => void
   onAddUrgent: (text: string) => void
   onAddMemo: (text: string) => void
+  onPurge: () => void
 }
 
 const FONT = { fontFamily: 'var(--font)' }
@@ -117,13 +118,20 @@ function WorkInterruption({
 
 export function Timer({
   data, soundEnabled, completedPomodoros,
-  onPause, onResume, onReset, onSkip, onToggleSound, onAddUrgent, onAddMemo,
+  onPause, onResume, onReset, onSkip, onToggleSound, onAddUrgent, onAddMemo, onPurge,
 }: Props) {
   const isRunning = data.state === 'running'
   const cyclePos  = completedPomodoros % 4
+  const [purgeConfirm, setPurgeConfirm] = useState(false)
 
   function withUnlock(fn: () => void) {
     return () => { unlockAudioContext(); fn() }
+  }
+
+  function handlePurge() {
+    if (!purgeConfirm) { setPurgeConfirm(true); return }
+    onPurge()
+    setPurgeConfirm(false)
   }
 
   return (
@@ -223,7 +231,26 @@ export function Timer({
           onAddMemo={onAddMemo}
         />
 
-        {/* 鈹€鈹€鈹€ DEBUG SKIP row 鈹€鈹€鈹€ */}
+        {/* ─── PURGE button ─── */}
+        {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
+          <button
+            onClick={handlePurge}
+            className="px-btn"
+            style={{
+              ...FONT, width: '100%', padding: '8px',
+              border: `1px solid ${purgeConfirm ? 'rgba(200,50,50,0.6)' : 'rgba(200,80,80,0.25)'}`,
+              borderRadius: 6,
+              background: purgeConfirm ? 'rgba(180,30,30,0.25)' : 'rgba(150,30,30,0.08)',
+              color: purgeConfirm ? '#ff8888' : 'rgba(220,100,100,0.6)',
+              fontSize: 13, letterSpacing: '0.05em',
+              transition: 'all 0.15s',
+            }}
+          >
+            {purgeConfirm ? '⚠ PURGE all notes? (tap again)' : '🗑 PURGE'}
+          </button>
+        )}
+
+        {/* ─── DEBUG SKIP row ─── */}
         <button
           onClick={onSkip}
           className="px-btn"
@@ -234,7 +261,7 @@ export function Timer({
             fontSize: 13, letterSpacing: '0.05em',
           }}
         >
-          鈴?SKIP WORK (DEBUG)
+          ⏭ SKIP WORK (DEBUG)
         </button>
 
         {/* 鈹€鈹€鈹€ Controls 鈹€鈹€鈹€ */}
