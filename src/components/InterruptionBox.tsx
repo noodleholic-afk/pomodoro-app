@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 
 interface Props {
   label: string
@@ -25,7 +25,7 @@ export function InterruptionBox({ label, emoji, items, onAdd }: Props) {
         onClick={() => setOpen(o => !o)}
       >
         <span>{emoji} {label} {items.length > 0 && <span className="text-yellow-300">({items.length})</span>}</span>
-        <span className="text-white/50">{open ? '▲' : '▼'}</span>
+        <span className="text-white/50">{open ? '鈻? : '鈻?}</span>
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-2">
@@ -37,7 +37,7 @@ export function InterruptionBox({ label, emoji, items, onAdd }: Props) {
           <div className="flex gap-2 mt-2">
             <input
               className="flex-1 bg-white/10 border border-white/30 px-2 py-1 text-white text-xs outline-none placeholder-white/40 font-pixel"
-              placeholder="记录..."
+              placeholder="璁板綍..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}

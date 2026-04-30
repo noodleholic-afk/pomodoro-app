@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
 import { unlockAudioContext } from '../lib/audio'
 
@@ -73,18 +73,18 @@ export function BreakScreen({
       } as React.CSSProperties}
     >
 
-      {/* ─── Header ─── */}
+      {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">☕</span>
-          <span style={{ color: hi, fontSize: 10, ...FONT }}>{label}</span>
+          <span className="text-base">鈽?/span>
+          <span style={{ color: hi, fontSize: 14, ...FONT }}>{label}</span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, ...FONT }}>{minutes}</span>
+        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, ...FONT }}>{minutes}</span>
       </div>
 
       <div className="flex flex-col px-4 gap-3 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {/* ─── 4 progress blocks ─── */}
+        {/* 鈹€鈹€鈹€ 4 progress blocks 鈹€鈹€鈹€ */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '4px 0' }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} style={{
@@ -97,7 +97,7 @@ export function BreakScreen({
           ))}
         </div>
 
-        {/* ─── Timer display ─── */}
+        {/* 鈹€鈹€鈹€ Timer display 鈹€鈹€鈹€ */}
         <div style={{
           background: '#060810',
           border: `3px solid ${border}`,
@@ -127,7 +127,7 @@ export function BreakScreen({
           </span>
         </div>
 
-        {/* ─── Progress bar ─── */}
+        {/* 鈹€鈹€鈹€ Progress bar 鈹€鈹€鈹€ */}
         <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 3, height: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
           <div style={{
             height: '100%', borderRadius: 3,
@@ -138,12 +138,12 @@ export function BreakScreen({
           }} />
         </div>
 
-        {/* ─── Checklist (interruptions) ─── */}
+        {/* 鈹€鈹€鈹€ Checklist (interruptions) 鈹€鈹€鈹€ */}
         {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
           <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', background: 'rgba(255,255,255,0.03)' }}>
             {data.urgentItems.length > 0 && (
               <>
-                <p style={{ ...FONT, fontSize: 8, color: '#ff6666', marginBottom: 6 }}>🚨 URGENT</p>
+                <p style={{ ...FONT, fontSize: 12, color: '#ff6666', marginBottom: 6 }}>馃毃 URGENT</p>
                 {data.urgentItems.map(item => (
                   <div
                     key={item.id}
@@ -157,7 +157,7 @@ export function BreakScreen({
                       transition: 'background 0.15s',
                     }} />
                     <span style={{
-                      ...FONT, fontSize: 9,
+                      ...FONT, fontSize: 13,
                       color: checkedUrgent.has(item.id) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)',
                       textDecoration: checkedUrgent.has(item.id) ? 'line-through' : 'none',
                     }}>{item.text}</span>
@@ -167,7 +167,7 @@ export function BreakScreen({
             )}
             {data.memoItems.length > 0 && (
               <>
-                <p style={{ ...FONT, fontSize: 8, color: '#aaddff', marginBottom: 6, marginTop: data.urgentItems.length > 0 ? 8 : 0 }}>📌 MEMO</p>
+                <p style={{ ...FONT, fontSize: 12, color: '#aaddff', marginBottom: 6, marginTop: data.urgentItems.length > 0 ? 8 : 0 }}>馃搶 MEMO</p>
                 {data.memoItems.map(item => (
                   <div
                     key={item.id}
@@ -181,7 +181,7 @@ export function BreakScreen({
                       transition: 'background 0.15s',
                     }} />
                     <span style={{
-                      ...FONT, fontSize: 9,
+                      ...FONT, fontSize: 13,
                       color: checkedMemo.has(item.id) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)',
                       textDecoration: checkedMemo.has(item.id) ? 'line-through' : 'none',
                     }}>{item.text}</span>
@@ -192,7 +192,7 @@ export function BreakScreen({
           </div>
         )}
 
-        {/* ─── Controls ─── */}
+        {/* 鈹€鈹€鈹€ Controls 鈹€鈹€鈹€ */}
         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
           {/* PAUSE / RESUME */}
           <button
@@ -201,13 +201,13 @@ export function BreakScreen({
             style={{
               ...FONT, flex: 2, padding: '14px 0',
               border: `2px solid ${border}`,
-              borderRadius: 8, fontSize: 11,
+              borderRadius: 8, fontSize: 16,
               background: lo, color: hi,
               boxShadow: `0 0 10px ${hi}33`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <span>{isRunning ? '⏸ PAUSE' : '▶ RESUME'}</span>
+            <span>{isRunning ? '鈴?PAUSE' : '鈻?RESUME'}</span>
           </button>
 
           {/* SKIP */}
@@ -221,8 +221,8 @@ export function BreakScreen({
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}
           >
-            <span style={{ fontSize: 16 }}>⏭</span>
-            <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SKIP</span>
+            <span style={{ fontSize: 20 }}>鈴?/span>
+            <span style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>SKIP</span>
           </button>
 
           {/* SOUND */}
@@ -230,15 +230,15 @@ export function BreakScreen({
             onClick={withUnlock(onToggleSound)}
             className="px-btn"
             style={{
-              padding: '14px 12px', fontSize: 16,
+              padding: '14px 12px', fontSize: 20,
               border: '2px solid rgba(255,255,255,0.15)', borderRadius: 8,
               background: 'rgba(255,255,255,0.05)',
               color: soundEnabled ? '#fff' : 'rgba(255,255,255,0.3)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}
           >
-            <span>{soundEnabled ? '🔊' : '🔇'}</span>
-            <span style={{ ...FONT, fontSize: 6, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
+            <span>{soundEnabled ? '馃攰' : '馃攪'}</span>
+            <span style={{ ...FONT, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>SOUND</span>
           </button>
         </div>
 

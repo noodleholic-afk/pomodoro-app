@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { useTimer } from './hooks/useTimer'
 import { useSupabase } from './hooks/useSupabase'
@@ -88,7 +88,7 @@ export default function App() {
 
   const timerRef          = useRef<ReturnType<typeof useTimer> | null>(null)
   const completedRef      = useRef(0)
-  const screenRef         = useRef<Screen>('start')   // ← tracks current screen for callbacks
+  const screenRef         = useRef<Screen>('start')   // 鈫?tracks current screen for callbacks
   const upsertSessionRef  = useRef<((s: any) => void) | null>(null)
 
   // Keep refs in sync
@@ -130,7 +130,7 @@ export default function App() {
    */
   const handleRemoteSession = useCallback((session: PomodoroSession) => {
     const cur = screenRef.current
-    if (cur === 'record' || cur === 'settings') return   // ← KEY FIX
+    if (cur === 'record' || cur === 'settings') return   // 鈫?KEY FIX
 
     timerRef.current?.restoreSession({
       phase: session.phase as Phase,
@@ -243,7 +243,7 @@ export default function App() {
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * Work completes → go to Record.
+   * Work completes 鈫?go to Record.
    * Immediately clear end_time in Supabase so Realtime bounce-backs
    * don't think there's an active timer and override the screen.
    */
@@ -256,7 +256,7 @@ export default function App() {
       // Clear end_time so self-triggered Realtime won't pull back to timer
       upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
     } else {
-      // Break done → reset and go to StartScreen to re-select task
+      // Break done 鈫?reset and go to StartScreen to re-select task
       timerRef.current?.reset()
       setScreen('start')
       clearLocal()
@@ -315,7 +315,7 @@ export default function App() {
     if (urlParams.task_name) window.history.replaceState({}, '', '/')
   }
 
-  // SUBMIT on RecordScreen → start break phase
+  // SUBMIT on RecordScreen 鈫?start break phase
   function handleRecord(record: RecordData) {
     submitRecord(record)
     timer.startNextPhase(completedPomodoros)
@@ -323,7 +323,7 @@ export default function App() {
     setPendingRecord(null)
   }
 
-  // RESTART on RecordScreen → undo last count, back to start
+  // RESTART on RecordScreen 鈫?undo last count, back to start
   function handleBackFromRecord() {
     setCompletedPomodoros(n => Math.max(0, n - 1))
     timer.reset()
@@ -332,7 +332,7 @@ export default function App() {
     clearLocal()
   }
 
-  // SKIP work phase (debug) → go to record immediately
+  // SKIP work phase (debug) 鈫?go to record immediately
   function handleSkipWork() {
     // Clear end_time first so Realtime doesn't bounce back
     upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
@@ -342,7 +342,7 @@ export default function App() {
     clearLocal()
   }
 
-  // SKIP break → reset and re-select task
+  // SKIP break 鈫?reset and re-select task
   function handleSkipBreak() {
     timer.reset()
     setScreen('start')
@@ -364,7 +364,7 @@ export default function App() {
     setScreen(timer.data.state === 'idle' ? 'start' : 'timer')
   }
 
-  // ── Routing ──
+  // 鈹€鈹€ Routing 鈹€鈹€
 
   if (screen === 'settings') {
     return (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import type { UserSettings } from '../types'
 
 interface Props {
@@ -68,13 +68,13 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
   async function handleLogin() {
     const e = email.trim()
     const p = password.trim()
-    if (!e || !p) { setLoginError('邮箱和密码不能为空'); return }
+    if (!e || !p) { setLoginError('閭鍜屽瘑鐮佷笉鑳戒负绌?); return }
     setLoginLoading(true)
     setLoginError(null)
     try {
       await onLogin(e, p)
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : '登录失败，请重试')
+      setLoginError(err instanceof Error ? err.message : '鐧诲綍澶辫触锛岃閲嶈瘯')
     } finally {
       setLoginLoading(false)
     }
@@ -107,41 +107,39 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
     >
       <div className="max-w-md mx-auto px-4 py-8 space-y-6 overflow-y-auto" style={FONT}>
 
-        {/* ─── Header ─── */}
+        {/* 鈹€鈹€鈹€ Header 鈹€鈹€鈹€ */}
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
             style={FONT}
             className="pixel-btn text-white/40 text-xs hover:text-white"
           >
-            ← 返回
+            鈫?杩斿洖
           </button>
-          <h2 className="text-white text-sm tracking-widest" style={FONT}>⚙ 设置</h2>
+          <h2 className="text-white text-sm tracking-widest" style={FONT}>鈿?璁剧疆</h2>
         </div>
 
         <hr className="section-divider" />
 
-        {/* ─── Auth ─── */}
+        {/* 鈹€鈹€鈹€ Auth 鈹€鈹€鈹€ */}
         <Card>
-          <p className="text-white/60 text-xs" style={FONT}>账户</p>
+          <p className="text-white/60 text-xs" style={FONT}>璐︽埛</p>
           {isLoggedIn ? (
             <div className="flex items-center justify-between">
-              <p className="text-green-400/80 text-xs" style={FONT}>✓ {userEmail}</p>
+              <p className="text-green-400/80 text-xs" style={FONT}>鉁?{userEmail}</p>
               <button
                 onClick={onLogout}
                 style={FONT}
                 className="pixel-btn text-red-400/60 text-xs hover:text-red-400"
               >
-                退出
-              </button>
+                閫€鍑?              </button>
             </div>
           ) : (
             <div className="space-y-2">
               <p className="text-white/30 text-xs leading-relaxed" style={FONT}>
-                登录后可跨设备同步进度
-              </p>
-              <PixelInput value={email}    onChange={setEmail}    placeholder="邮箱地址" type="email" />
-              <PixelInput value={password} onChange={setPassword} placeholder="密码"     type="password" />
+                鐧诲綍鍚庡彲璺ㄨ澶囧悓姝ヨ繘搴?              </p>
+              <PixelInput value={email}    onChange={setEmail}    placeholder="閭鍦板潃" type="email" />
+              <PixelInput value={password} onChange={setPassword} placeholder="瀵嗙爜"     type="password" />
               {loginError && (
                 <p className="text-red-400/70 text-xs" style={FONT}>{loginError}</p>
               )}
@@ -151,47 +149,47 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
                 style={FONT}
                 className="pixel-btn w-full py-3 border border-white/30 bg-white/5 text-white text-xs hover:bg-white/10 disabled:opacity-40"
               >
-                {loginLoading ? '登录中...' : '登 录 / 注 册'}
+                {loginLoading ? '鐧诲綍涓?..' : '鐧?褰?/ 娉?鍐?}
               </button>
             </div>
           )}
         </Card>
 
-        {/* ─── Notion Token ─── */}
+        {/* 鈹€鈹€鈹€ Notion Token 鈹€鈹€鈹€ */}
         <Card>
           <FieldLabel>Notion Integration Token</FieldLabel>
           <p className="text-white/25 text-xs leading-relaxed" style={FONT}>
-            notion.so/my-integrations → 创建 Internal Integration → 复制 secret
+            notion.so/my-integrations 鈫?鍒涘缓 Internal Integration 鈫?澶嶅埗 secret
           </p>
           <PixelInput value={notionToken} onChange={setNotionToken} placeholder="secret_..." type="password" />
         </Card>
 
-        {/* ─── SiliconFlow ─── */}
+        {/* 鈹€鈹€鈹€ SiliconFlow 鈹€鈹€鈹€ */}
         <Card>
           <FieldLabel>SiliconFlow API Key</FieldLabel>
           <p className="text-white/25 text-xs leading-relaxed" style={FONT}>
-            siliconflow.cn 注册，免费额度可用于 AI 解析番茄记录
+            siliconflow.cn 娉ㄥ唽锛屽厤璐归搴﹀彲鐢ㄤ簬 AI 瑙ｆ瀽鐣寗璁板綍
           </p>
           <PixelInput value={siliconKey} onChange={setSiliconKey} placeholder="sk-..." type="password" />
           <div className="pt-1 space-y-1">
-            <FieldLabel>AI 模型</FieldLabel>
+            <FieldLabel>AI 妯″瀷</FieldLabel>
             <select
               style={{ ...FONT, outline: 'none' }}
               className="w-full bg-white/5 border border-white/20 px-3 py-2.5 text-white text-xs"
               value={aiModel}
               onChange={e => setAiModel(e.target.value)}
             >
-              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2（推荐）</option>
+              <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2锛堟帹鑽愶級</option>
               <option value="kimi-k2-turbo-preview">Kimi K2 Turbo</option>
               <option value="THUDM/glm-4-9b-chat">GLM-4-9B</option>
             </select>
           </div>
         </Card>
 
-        {/* ─── Sound ─── */}
+        {/* 鈹€鈹€鈹€ Sound 鈹€鈹€鈹€ */}
         <Card>
           <div className="flex items-center justify-between">
-            <p className="text-white/60 text-xs" style={FONT}>🔊 音效</p>
+            <p className="text-white/60 text-xs" style={FONT}>馃攰 闊虫晥</p>
             <button
               onClick={() => setSoundEnabled(v => !v)}
               className={`pixel-btn relative w-12 h-6 border-2 transition-colors ${
@@ -207,21 +205,21 @@ export function Settings({ settings, onSave, onBack, isLoggedIn, userEmail, onLo
           </div>
         </Card>
 
-        {/* ─── Save ─── */}
+        {/* 鈹€鈹€鈹€ Save 鈹€鈹€鈹€ */}
         <button
           onClick={handleSave}
           style={FONT}
           className="pixel-btn w-full py-4 border-2 border-white bg-white text-gray-900 text-xs hover:bg-white/90"
         >
-          {saved ? '✓ 已保存' : '保存设置'}
+          {saved ? '鉁?宸蹭繚瀛? : '淇濆瓨璁剧疆'}
         </button>
 
-        {/* ─── DB info ─── */}
+        {/* 鈹€鈹€鈹€ DB info 鈹€鈹€鈹€ */}
         <div className="border border-white/5 p-4 space-y-1" style={{ background: 'rgba(255,255,255,0.02)' }}>
-          <p className="text-white/20 text-xs mb-2" style={FONT}>数据库 ID（默认值）</p>
-          <p className="text-white/15 text-xs" style={FONT}>番茄战报：6894953a...</p>
-          <p className="text-white/15 text-xs" style={FONT}>好时光日志：b6f8a0ec...</p>
-          <p className="text-white/15 text-xs" style={FONT}>PARA+CODE：c3c35753...</p>
+          <p className="text-white/20 text-xs mb-2" style={FONT}>鏁版嵁搴?ID锛堥粯璁ゅ€硷級</p>
+          <p className="text-white/15 text-xs" style={FONT}>鐣寗鎴樻姤锛?894953a...</p>
+          <p className="text-white/15 text-xs" style={FONT}>濂芥椂鍏夋棩蹇楋細b6f8a0ec...</p>
+          <p className="text-white/15 text-xs" style={FONT}>PARA+CODE锛歝3c35753...</p>
         </div>
       </div>
     </div>

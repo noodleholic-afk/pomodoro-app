@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNotionTasks } from '../hooks/useNotionTasks'
 import { supabase } from '../lib/supabase'
 
@@ -13,15 +13,15 @@ interface Props {
 }
 
 const AREAS = [
-  { id: '求职',  emoji: '🔍', label: '求职' },
-  { id: '身心',  emoji: '💚', label: '身心' },
-  { id: '人生OS',emoji: '🪢', label: '人生OS' },
-  { id: '兼职',  emoji: '🏪', label: '兼职' },
-  { id: '财务',  emoji: '💰', label: '财务' },
-  { id: '生活',  emoji: '🏠', label: '生活' },
-  { id: '兴趣',  emoji: '💃', label: '兴趣' },
-  { id: '关系',  emoji: '👥', label: '关系' },
-  { id: '其他',  emoji: '📦', label: '其他', full: true },
+  { id: '姹傝亴',  emoji: '馃攳', label: '姹傝亴' },
+  { id: '韬績',  emoji: '馃挌', label: '韬績' },
+  { id: '浜虹敓OS',emoji: '馃', label: '浜虹敓OS' },
+  { id: '鍏艰亴',  emoji: '馃彧', label: '鍏艰亴' },
+  { id: '璐㈠姟',  emoji: '馃挵', label: '璐㈠姟' },
+  { id: '鐢熸椿',  emoji: '馃彔', label: '鐢熸椿' },
+  { id: '鍏磋叮',  emoji: '馃拑', label: '鍏磋叮' },
+  { id: '鍏崇郴',  emoji: '馃懃', label: '鍏崇郴' },
+  { id: '鍏朵粬',  emoji: '馃摝', label: '鍏朵粬', full: true },
 ] as const
 
 const FONT = { fontFamily: 'var(--font)' }
@@ -89,25 +89,25 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
       }}
     >
 
-      {/* ─── Header bar ─── */}
+      {/* 鈹€鈹€鈹€ Header bar 鈹€鈹€鈹€ */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">🍅</span>
+          <span className="text-base">馃崊</span>
           <span className="text-white/60 text-xs">POMO</span>
         </div>
         <div className="flex items-center gap-3">
           {completedPomodoros > 0 && (
             <span className="text-white/40 text-xs">#{completedPomodoros}</span>
           )}
-          <button onClick={onOpenSettings} className="px-btn text-white/40 hover:text-white text-base">⚙</button>
+          <button onClick={onOpenSettings} className="px-btn text-white/40 hover:text-white text-base">鈿?/button>
         </div>
       </div>
 
       <div className="flex flex-col px-4 gap-4 max-w-md mx-auto w-full" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
 
-        {/* ─── Area grid ─── */}
+        {/* 鈹€鈹€鈹€ Area grid 鈹€鈹€鈹€ */}
         <div className="rounded-lg border border-white/10 p-3" style={C}>
-          <p className="text-white/40 text-xs mb-2" style={FONT}>领域</p>
+          <p className="text-white/40 text-xs mb-2" style={FONT}>棰嗗煙</p>
           <div className="grid grid-cols-2 gap-1.5">
             {AREAS.map(area => (
               <button
@@ -120,7 +120,7 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
                   border: `2px solid ${selectedArea === area.label ? 'var(--work-hi)' : 'rgba(255,255,255,0.12)'}`,
                   color: selectedArea === area.label ? '#ff8888' : 'rgba(255,255,255,0.65)',
                   borderRadius: 6, padding: '8px 10px', textAlign: 'left',
-                  fontSize: 10, cursor: 'pointer', transition: 'all 0.15s',
+                  fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
                 }}
                 className="px-btn"
               >
@@ -130,20 +130,20 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
           </div>
         </div>
 
-        {/* ─── Notion tasks ─── */}
+        {/* 鈹€鈹€鈹€ Notion tasks 鈹€鈹€鈹€ */}
         <div className="rounded-lg border border-white/10 p-3" style={C}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs" style={FONT}>Notion 任务</p>
+            <p className="text-white/40 text-xs" style={FONT}>Notion 浠诲姟</p>
             {isLoggedIn && (
-              <button onClick={fetchTasks} className="px-btn text-white/25 text-xs" style={FONT}>↻</button>
+              <button onClick={fetchTasks} className="px-btn text-white/25 text-xs" style={FONT}>鈫?/button>
             )}
           </div>
           {!isLoggedIn ? (
-            <p className="text-white/20 text-xs py-1" style={FONT}>⚙ 登录后显示</p>
+            <p className="text-white/20 text-xs py-1" style={FONT}>鈿?鐧诲綍鍚庢樉绀?/p>
           ) : loading ? (
-            <p className="text-white/25 text-xs py-1" style={FONT}>载入中...</p>
+            <p className="text-white/25 text-xs py-1" style={FONT}>杞藉叆涓?..</p>
           ) : tasks.length === 0 ? (
-            <p className="text-white/20 text-xs py-1" style={FONT}>无进行中任务（检查 Settings → Notion Token）</p>
+            <p className="text-white/20 text-xs py-1" style={FONT}>鏃犺繘琛屼腑浠诲姟锛堟鏌?Settings 鈫?Notion Token锛?/p>
           ) : (
             <div className="space-y-1.5">
               {tasks.map(task => (
@@ -160,20 +160,20 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
                   }}
                 >
                   <div className="truncate">{task.name}</div>
-                  {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, marginTop: 2 }}>{task.area}</div>}
+                  {task.area && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, marginTop: 2 }}>{task.area}</div>}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* ─── Manual input + AI button ─── */}
+        {/* 鈹€鈹€鈹€ Manual input + AI button 鈹€鈹€鈹€ */}
         <div className="rounded-lg border border-white/10 p-3" style={C}>
           <div className="flex gap-2">
             <input
               className="flex-1 px-3 py-2 text-white text-xs"
               style={{ ...FONT, borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)' }}
-              placeholder="手动输入任务名称..."
+              placeholder="鎵嬪姩杈撳叆浠诲姟鍚嶇О..."
               value={taskName}
               onChange={e => { setTaskName(e.target.value); setTaskId('') }}
               onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
@@ -184,14 +184,14 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
               disabled={!taskName.trim() || aiLoading}
               className="px-btn px-3 py-2 text-base"
               style={{ border: '2px solid rgba(255,255,255,0.2)', borderRadius: 6, background: 'rgba(255,255,255,0.06)' }}
-              title="AI 识别"
+              title="AI 璇嗗埆"
             >
-              {aiLoading ? '...' : '✨'}
+              {aiLoading ? '...' : '鉁?}
             </button>
           </div>
         </div>
 
-        {/* ─── START ─── */}
+        {/* 鈹€鈹€鈹€ START 鈹€鈹€鈹€ */}
         <button
           onClick={handleStart}
           disabled={!canStart}
@@ -205,7 +205,7 @@ export function StartScreen({ prefillTask, prefillArea, prefillTaskId, onStart, 
             boxShadow: canStart ? '0 0 12px rgba(204,68,68,0.3)' : 'none',
           }}
         >
-          ▶ START
+          鈻?START
         </button>
       </div>
     </div>
