@@ -104,6 +104,7 @@ export function StartScreen({
   }
 
   function selectTodayTask(task: TodayTask) {
+    if (task.done) return
     setTaskName(task.text)
     setTaskId('')
   }
@@ -159,7 +160,7 @@ export function StartScreen({
                   fontSize: 17, cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >
-                <span style={EM}>{area.emoji}</span> <span className="zh">{area.label}</span>
+                <span style={EM}>{area.emoji}</span> <span className="zh-btn">{area.label}</span>
               </button>
             ))}
           </div>
@@ -253,14 +254,16 @@ export function StartScreen({
                   {/* Task name — click to select */}
                   <button
                     onClick={() => selectTodayTask(task)}
+                    disabled={task.done}
                     className="px-btn"
                     style={{
                       ...FONT, flex: 1, textAlign: 'left', fontSize: 13,
                       padding: '6px 10px', borderRadius: 6,
                       background: taskName === task.text && !taskId ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
                       border: `2px solid ${taskName === task.text && !taskId ? 'var(--work-border)' : 'rgba(255,255,255,0.08)'}`,
-                      color: task.done ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.75)',
+                      color: task.done ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)',
                       textDecoration: task.done ? 'line-through' : 'none',
+                      cursor: task.done ? 'default' : 'pointer',
                     }}
                   >
                     {task.text}

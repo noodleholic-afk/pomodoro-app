@@ -117,11 +117,16 @@ input:focus, textarea:focus, select:focus {
 ::placeholder { color: rgba(255,255,255,0.25); }
 
 /* ─── Chinese text offset — system-ui baseline sits lower than Press Start 2P ─── */
+/* Chinese text in standalone labels — shift up to align baseline with Press Start 2P */
 .zh {
   position: relative;
-  top: -7px;
+  top: -5px;
   display: inline-block;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
+}
+/* Chinese inside buttons (mixed with emoji/English) — size only, no shift */
+.zh-btn {
+  letter-spacing: 0.12em;
 }
 
 /* ─── Scrollbar ─── */

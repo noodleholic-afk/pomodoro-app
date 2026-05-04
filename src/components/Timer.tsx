@@ -175,15 +175,21 @@ export function Timer({
           ))}
         </div>
 
-        {/* Task name */}
+        {/* Task name + area */}
         {data.taskName && (
           <div className="blink-task" style={{
             border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
             background: 'rgba(170,51,51,0.12)',
-            fontSize: 19, color: '#ffaaaa',
-            textAlign: 'center', letterSpacing: '0.05em',
+            textAlign: 'center',
           }}>
-            <span className="zh">{data.taskName}</span>
+            <div style={{ fontSize: 19, color: '#ffaaaa', letterSpacing: '0.05em' }}>
+              <span className="zh">{data.taskName}</span>
+            </div>
+            {data.area && (
+              <div style={{ fontSize: 13, color: 'rgba(255,170,170,0.5)', marginTop: 4, letterSpacing: '0.05em' }}>
+                <span className="zh-btn">{data.area}</span>
+              </div>
+            )}
           </div>
         )}
 
