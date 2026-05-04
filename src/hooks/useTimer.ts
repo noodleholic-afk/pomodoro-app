@@ -171,6 +171,8 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       startedAt: null,
       // urgentItems / memoItems are intentionally kept across cycles.
       // Use clearInterruptions() to explicitly purge them.
+      urgentItems: dataRef.current.urgentItems,
+      memoItems: dataRef.current.memoItems,
     }
     setData(next)
     onSessionChange({ ...next, endTime: null, pauseRemaining: null })

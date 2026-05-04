@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNotionTasks } from '../hooks/useNotionTasks'
-import { supabase } from '../lib/supabase'
 
 interface TodayTask {
   id: string
@@ -53,7 +52,6 @@ export function StartScreen({
   const [taskName,     setTaskName]     = useState(prefillTask   || '')
   const [taskId,       setTaskId]       = useState(prefillTaskId || '')
   const [selectedArea, setSelectedArea] = useState(prefillArea   || '')
-  const [aiLoading,    setAiLoading]    = useState(false)
 
   // TODAY'S TASKS
   const [todayTasks,  setTodayTasks]   = useState<TodayTask[]>(loadTodayTasks)
@@ -78,18 +76,6 @@ export function StartScreen({
 
   function toggleArea(label: string) {
     setSelectedArea(prev => prev === label ? '' : label)
-  }
-
-  async function handleAI() {
-    const text = taskName.trim()
-    if (!text || aiLoading) return
-    setAiLoading(true)
-    try {
-      const { data } = await supabase.functions.invoke('ai-parse', { body: { text } })
-      if (data?.task_name) setTaskName(data.task_name)
-    } catch { /* silent */ } finally {
-      setAiLoading(false)
-    }
   }
 
   function handleStart() {
@@ -285,36 +271,6 @@ export function StartScreen({
           )}
         </div>
 
-        {/* ─── Manual input + AI button ─── */}
-        <div style={CARD_STYLE}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              style={{
-                ...FONT, flex: 1, fontSize: 16, padding: '8px 12px', color: '#fff',
-                borderRadius: 6, border: '2px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.06)', outline: 'none',
-              }}
-              placeholder="手动输入任务名称..."
-              value={taskName}
-              onChange={e => { setTaskName(e.target.value); setTaskId('') }}
-              onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
-              autoFocus
-            />
-            <button
-              onClick={handleAI}
-              disabled={!taskName.trim() || aiLoading}
-              className="px-btn"
-              style={{
-                padding: '8px 12px', fontSize: 16,
-                border: '2px solid rgba(255,255,255,0.2)',
-                borderRadius: 6, background: 'rgba(255,255,255,0.06)',
-              }}
-              title="AI 识别"
-            >
-              {aiLoading ? '...' : '✨'}
-            </button>
-          </div>
-        </div>
 
         {/* ─── START ─── */}
         <button

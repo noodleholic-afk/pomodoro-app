@@ -180,10 +180,10 @@ export function Timer({
           <div className="blink-task" style={{
             border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
             background: 'rgba(170,51,51,0.12)',
-            fontSize: 16, color: '#ffaaaa',
+            fontSize: 19, color: '#ffaaaa',
             textAlign: 'center', letterSpacing: '0.05em',
           }}>
-            {data.taskName}
+            <span className="zh">{data.taskName}</span>
           </div>
         )}
 
