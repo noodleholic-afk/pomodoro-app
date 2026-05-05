@@ -186,7 +186,7 @@ export function Timer({
               <span className="zh">{data.taskName}</span>
             </div>
             {data.area && (
-              <div style={{ fontSize: 13, color: 'rgba(255,170,170,0.5)', marginTop: 4, letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 14, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em' }}>
                 <span className="zh-btn">{data.area}</span>
               </div>
             )}

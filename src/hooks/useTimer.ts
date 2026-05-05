@@ -131,8 +131,9 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       taskId,
       area,
       startedAt: now,
-      urgentItems: [],
-      memoItems: [],
+      // Preserve urgent/memo across task starts. Only RESTART (reset) clears them.
+      urgentItems: dataRef.current.urgentItems,
+      memoItems: dataRef.current.memoItems,
     }
     setData(next)
     onSessionChange({ ...next, endTime, pauseRemaining: null })
@@ -169,13 +170,12 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       remaining: total,
       totalSeconds: total,
       startedAt: null,
-      // urgentItems / memoItems are intentionally kept across cycles.
-      // Use clearInterruptions() to explicitly purge them.
-      urgentItems: dataRef.current.urgentItems,
-      memoItems: dataRef.current.memoItems,
+      // RESTART explicitly clears urgent/memo (per user spec).
+      urgentItems: [],
+      memoItems: [],
     }
     setData(next)
-    onSessionChange({ ...next, endTime: null, pauseRemaining: null })
+    onSessionChange({ ...next, endTime: null, pauseRemaining: null, interruptions_urgent: [], interruptions_memo: [] } as any)
   }, [onSessionChange])
 
   /** Explicitly clear all interruption notes. Called only by PURGE button. */

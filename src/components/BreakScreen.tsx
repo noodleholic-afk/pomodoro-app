@@ -98,6 +98,24 @@ export function BreakScreen({
           ))}
         </div>
 
+        {/* Task name + area */}
+        {data.taskName && (
+          <div style={{
+            border: `2px solid ${border}`, borderRadius: 6, padding: '8px 14px',
+            background: lo,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 17, color: hi, letterSpacing: '0.05em' }}>
+              <span className="zh">{data.taskName}</span>
+            </div>
+            {data.area && (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4, letterSpacing: '0.06em' }}>
+                <span className="zh-btn">{data.area}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Timer display */}
         <div style={{
           background: '#060810',

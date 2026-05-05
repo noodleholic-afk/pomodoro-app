@@ -127,13 +127,20 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
         style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
       >
 
-        {/* ─── Task name ─── */}
+        {/* ─── Task name + area ─── */}
         <div style={{
           border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
           background: 'rgba(170,51,51,0.12)',
-          fontSize: 16, color: '#ffaaaa', textAlign: 'center',
+          textAlign: 'center',
         }}>
-          {timerData.taskName}
+          <div style={{ fontSize: 17, color: '#ffaaaa', letterSpacing: '0.05em' }}>
+            <span className="zh">{timerData.taskName}</span>
+          </div>
+          {timerData.area && (
+            <div style={{ fontSize: 13, color: 'rgba(255,170,170,0.6)', marginTop: 4, letterSpacing: '0.06em' }}>
+              <span className="zh-btn">{timerData.area}</span>
+            </div>
+          )}
         </div>
 
         {/* ─── All fields ─── */}
