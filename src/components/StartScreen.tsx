@@ -15,6 +15,8 @@ interface Props {
   onOpenSettings: () => void
   completedPomodoros: number
   isLoggedIn?: boolean
+  urgentItems?: { id: string; text: string }[]
+  memoItems?: { id: string; text: string }[]
 }
 
 const AREAS = [
@@ -48,10 +50,16 @@ function saveTodayTasks(tasks: TodayTask[]) {
 export function StartScreen({
   prefillTask, prefillArea, prefillTaskId,
   onStart, onOpenSettings, completedPomodoros, isLoggedIn,
+  urgentItems = [], memoItems = [],
 }: Props) {
+  // Normalize prefillArea: "🔍 求职" → "求职" (extract label for AREAS matching)
+  const normalizedPrefillArea = prefillArea
+    ? (AREAS.find(a => prefillArea.includes(a.label))?.label || prefillArea)
+    : ''
+
   const [taskName,     setTaskName]     = useState(prefillTask   || '')
   const [taskId,       setTaskId]       = useState(prefillTaskId || '')
-  const [selectedArea, setSelectedArea] = useState(prefillArea   || '')
+  const [selectedArea, setSelectedArea] = useState(normalizedPrefillArea)
 
   // TODAY'S TASKS
   const [todayTasks,  setTodayTasks]   = useState<TodayTask[]>(loadTodayTasks)
@@ -60,6 +68,16 @@ export function StartScreen({
   const { tasks, loading, fetchTasks } = useNotionTasks()
 
   useEffect(() => { fetchTasks() }, [])
+
+  // Sync prefill values when returning from break (component may already be mounted)
+  useEffect(() => {
+    if (prefillTask)   setTaskName(prefillTask)
+    if (prefillTaskId) setTaskId(prefillTaskId)
+    if (prefillArea) {
+      const norm = AREAS.find(a => prefillArea.includes(a.label))?.label || prefillArea
+      setSelectedArea(norm)
+    }
+  }, [prefillTask, prefillArea, prefillTaskId])
 
   // Persist today tasks
   useEffect(() => { saveTodayTasks(todayTasks) }, [todayTasks])
@@ -274,6 +292,36 @@ export function StartScreen({
           )}
         </div>
 
+
+        {/* ─── URGENT / MEMO notes from current session ─── */}
+        {(urgentItems.length > 0 || memoItems.length > 0) && (
+          <div style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {urgentItems.length > 0 && (
+              <div>
+                <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 6 }}>
+                  <span style={EM}>🚨</span> URGENT
+                </p>
+                {urgentItems.map(item => (
+                  <p key={item.id} style={{ ...FONT, fontSize: 13, color: 'rgba(255,150,150,0.7)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 8, marginBottom: 4 }}>
+                    {item.text}
+                  </p>
+                ))}
+              </div>
+            )}
+            {memoItems.length > 0 && (
+              <div>
+                <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 6 }}>
+                  <span style={EM}>📌</span> MEMO
+                </p>
+                {memoItems.map(item => (
+                  <p key={item.id} style={{ ...FONT, fontSize: 13, color: 'rgba(150,200,255,0.7)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 8, marginBottom: 4 }}>
+                    {item.text}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ─── START ─── */}
         <button

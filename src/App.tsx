@@ -268,8 +268,8 @@ export default function App() {
         new Notification('🍅 番茄完成！', { body: '去记录吧' })
       }
     } else {
-      // Break done 鈫?reset and go to StartScreen to re-select task
-      timerRef.current?.reset()
+      // Break done → soft-reset (keep interruptions/task) and go to StartScreen
+      timerRef.current?.softReset()
       setScreen('start')
       clearLocal()
       // Notify user
@@ -358,9 +358,9 @@ export default function App() {
     clearLocal()
   }
 
-  // SKIP break 鈫?reset and re-select task
+  // SKIP break → soft-reset (keep interruptions) and re-select task
   function handleSkipBreak() {
-    timer.reset()
+    timer.softReset()
     setScreen('start')
     clearLocal()
   }
@@ -441,13 +441,15 @@ export default function App() {
 
   return (
     <StartScreen
-      prefillTask={urlParams.task_name}
-      prefillArea={urlParams.area}
-      prefillTaskId={urlParams.task_id}
+      prefillTask={urlParams.task_name || timer.data.taskName}
+      prefillArea={urlParams.area || timer.data.area}
+      prefillTaskId={urlParams.task_id || timer.data.taskId}
       onStart={handleStart}
       onOpenSettings={() => setScreen('settings')}
       completedPomodoros={completedPomodoros}
       isLoggedIn={!!userId}
+      urgentItems={timer.data.urgentItems}
+      memoItems={timer.data.memoItems}
     />
   )
 }

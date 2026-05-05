@@ -178,6 +178,26 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     onSessionChange({ ...next, endTime: null, pauseRemaining: null, interruptions_urgent: [], interruptions_memo: [] } as any)
   }, [onSessionChange])
 
+  /** Soft reset: end the current phase but KEEP urgentItems/memoItems, taskName, area.
+   *  Used when a break completes — user returns to StartScreen with notes intact. */
+  const softReset = useCallback(() => {
+    endTimeRef.current = null
+    pauseRemainingRef.current = null
+    stateRef.current = 'idle'
+    const total = PHASE_DURATIONS['work']
+    const next: TimerData = {
+      ...dataRef.current,
+      phase: 'work',
+      state: 'idle',
+      remaining: total,
+      totalSeconds: total,
+      startedAt: null,
+      // Preserve urgentItems and memoItems across break transitions.
+    }
+    setData(next)
+    onSessionChange({ ...next, endTime: null, pauseRemaining: null } as any)
+  }, [onSessionChange])
+
   /** Explicitly clear all interruption notes. Called only by PURGE button. */
   const clearInterruptions = useCallback(() => {
     setData(prev => {
@@ -235,6 +255,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     pause,
     resume,
     reset,
+    softReset,
     startNextPhase,
     skipBreak,
     addUrgent,
