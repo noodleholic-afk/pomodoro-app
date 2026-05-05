@@ -40,6 +40,71 @@ const CARD_STYLE = {
   borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', padding: 12, ...C,
 }
 
+function InterruptionPanel({
+  urgentItems, memoItems, onPushToToday,
+}: {
+  urgentItems: { id: string; text: string }[]
+  memoItems:   { id: string; text: string }[]
+  onPushToToday: (text: string) => void
+}) {
+  const [pushed, setPushed] = useState<Set<string>>(new Set())
+
+  function push(id: string, text: string) {
+    if (pushed.has(id)) return
+    onPushToToday(text)
+    setPushed(prev => new Set([...prev, id]))
+  }
+
+  function renderItem(item: { id: string; text: string }, color: string, borderColor: string) {
+    const done = pushed.has(item.id)
+    return (
+      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{
+          ...FONT, flex: 1, fontSize: 13,
+          color: done ? 'rgba(255,255,255,0.25)' : color,
+          textDecoration: done ? 'line-through' : 'none',
+          borderLeft: `2px solid ${borderColor}`,
+          paddingLeft: 8,
+        }}>{item.text}</span>
+        <button
+          onClick={() => push(item.id, item.text)}
+          disabled={done}
+          className="px-btn"
+          style={{
+            ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+            border: `1px solid ${done ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
+            background: done ? 'transparent' : 'rgba(255,255,255,0.07)',
+            color: done ? 'rgba(255,255,255,0.3)' : '#fff',
+          }}
+        >
+          {done ? '✓' : '→'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {urgentItems.length > 0 && (
+        <div>
+          <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 8 }}>
+            <span style={EM}>🚨</span> URGENT
+          </p>
+          {urgentItems.map(item => renderItem(item, 'rgba(255,150,150,0.75)', 'rgba(255,100,100,0.4)'))}
+        </div>
+      )}
+      {memoItems.length > 0 && (
+        <div>
+          <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 8, marginTop: urgentItems.length > 0 ? 4 : 0 }}>
+            <span style={EM}>📌</span> MEMO
+          </p>
+          {memoItems.map(item => renderItem(item, 'rgba(150,200,255,0.75)', 'rgba(100,150,255,0.4)'))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function loadTodayTasks(): TodayTask[] {
   try { return JSON.parse(localStorage.getItem(TODAY_KEY) || '[]') } catch { return [] }
 }
@@ -293,34 +358,15 @@ export function StartScreen({
         </div>
 
 
-        {/* ─── URGENT / MEMO notes from current session ─── */}
+        {/* ─── URGENT / MEMO from current session ─── */}
         {(urgentItems.length > 0 || memoItems.length > 0) && (
-          <div style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {urgentItems.length > 0 && (
-              <div>
-                <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 6 }}>
-                  <span style={EM}>🚨</span> URGENT
-                </p>
-                {urgentItems.map(item => (
-                  <p key={item.id} style={{ ...FONT, fontSize: 13, color: 'rgba(255,150,150,0.7)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 8, marginBottom: 4 }}>
-                    {item.text}
-                  </p>
-                ))}
-              </div>
-            )}
-            {memoItems.length > 0 && (
-              <div>
-                <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 6 }}>
-                  <span style={EM}>📌</span> MEMO
-                </p>
-                {memoItems.map(item => (
-                  <p key={item.id} style={{ ...FONT, fontSize: 13, color: 'rgba(150,200,255,0.7)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 8, marginBottom: 4 }}>
-                    {item.text}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
+          <InterruptionPanel
+            urgentItems={urgentItems}
+            memoItems={memoItems}
+            onPushToToday={(text) => {
+              setTodayTasks(prev => [...prev, { id: crypto.randomUUID(), text, done: false }])
+            }}
+          />
         )}
 
         {/* ─── START ─── */}
