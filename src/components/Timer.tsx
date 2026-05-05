@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
+import type { SessionNote } from '../lib/sessionStore'
 import { unlockAudioContext } from '../lib/audio'
 
 interface Props {
   data: TimerData
+  area: string             // from activeSession (source of truth)
   soundEnabled: boolean
   completedPomodoros: number
   onPause: () => void
@@ -14,6 +16,8 @@ interface Props {
   onAddUrgent: (text: string) => void
   onAddMemo: (text: string) => void
   onPurge: () => void
+  sessionUrgent: SessionNote[]
+  sessionMemo: SessionNote[]
 }
 
 const FONT = { fontFamily: 'var(--font)' }
@@ -29,8 +33,8 @@ function fmt(s: number) {
 function WorkInterruption({
   urgentItems, memoItems, onAddUrgent, onAddMemo,
 }: {
-  urgentItems: { id: string; text: string }[]
-  memoItems:   { id: string; text: string }[]
+  urgentItems: SessionNote[]
+  memoItems:   SessionNote[]
   onAddUrgent: (t: string) => void
   onAddMemo:   (t: string) => void
 }) {
@@ -71,7 +75,7 @@ function WorkInterruption({
         {urgentOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {urgentItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 13, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center' }}>{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
@@ -97,7 +101,7 @@ function WorkInterruption({
         {memoOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {memoItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 13, color: 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center' }}>{i.text}</p>
+              <p key={i.id} style={{ ...FONT, fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
@@ -118,8 +122,10 @@ function WorkInterruption({
 }
 
 export function Timer({
-  data, soundEnabled, completedPomodoros,
-  onPause, onResume, onReset, onSkip, onToggleSound, onAddUrgent, onAddMemo, onPurge,
+  data, area, soundEnabled, completedPomodoros,
+  onPause, onResume, onReset, onSkip, onToggleSound,
+  onAddUrgent, onAddMemo, onPurge,
+  sessionUrgent, sessionMemo,
 }: Props) {
   const isRunning = data.state === 'running'
   const cyclePos  = completedPomodoros % 4
@@ -176,23 +182,20 @@ export function Timer({
         </div>
 
         {/* Task name + area */}
-        {data.taskName && (
-          <div style={{
-            border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
-            background: 'rgba(170,51,51,0.12)',
-            textAlign: 'center',
-          }}>
-            {/* Task name blinks; area stays solid */}
-            <div className="blink-task" style={{ fontSize: 19, color: '#ffaaaa', letterSpacing: '0.05em' }}>
-              <span className="zh">{data.taskName}</span>
-            </div>
-            {data.area && (
-              <div style={{ fontSize: 14, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em' }}>
-                <span className="zh-btn">{data.area}</span>
-              </div>
-            )}
+        <div style={{
+          border: '2px solid var(--work-border)', borderRadius: 6, padding: '10px 14px',
+          background: 'rgba(170,51,51,0.12)',
+          textAlign: 'center',
+        }}>
+          <div className="blink-task" style={{ fontSize: 19, color: '#ffaaaa', letterSpacing: '0.05em' }}>
+            <span className="zh">{data.taskName}</span>
           </div>
-        )}
+          {area && (
+            <div style={{ fontSize: 15, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em' }}>
+              {area}
+            </div>
+          )}
+        </div>
 
         {/* Timer display */}
         <div style={{
@@ -233,14 +236,14 @@ export function Timer({
 
         {/* Interruption inputs */}
         <WorkInterruption
-          urgentItems={data.urgentItems}
-          memoItems={data.memoItems}
+          urgentItems={sessionUrgent}
+          memoItems={sessionMemo}
           onAddUrgent={onAddUrgent}
           onAddMemo={onAddMemo}
         />
 
         {/* PURGE button */}
-        {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
+        {(sessionUrgent.length > 0 || sessionMemo.length > 0) && (
           <button
             onClick={handlePurge}
             className="px-btn"

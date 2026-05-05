@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNotionTasks } from '../hooks/useNotionTasks'
+import type { SessionNote } from '../lib/sessionStore'
 
 interface TodayTask {
   id: string
@@ -15,8 +16,9 @@ interface Props {
   onOpenSettings: () => void
   completedPomodoros: number
   isLoggedIn?: boolean
-  urgentItems?: { id: string; text: string }[]
-  memoItems?: { id: string; text: string }[]
+  sessionUrgent: SessionNote[]
+  sessionMemo: SessionNote[]
+  onMarkPushed: (id: string, type: 'urgent' | 'memo') => void
 }
 
 const AREAS = [
@@ -40,71 +42,6 @@ const CARD_STYLE = {
   borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', padding: 12, ...C,
 }
 
-function InterruptionPanel({
-  urgentItems, memoItems, onPushToToday,
-}: {
-  urgentItems: { id: string; text: string }[]
-  memoItems:   { id: string; text: string }[]
-  onPushToToday: (text: string) => void
-}) {
-  const [pushed, setPushed] = useState<Set<string>>(new Set())
-
-  function push(id: string, text: string) {
-    if (pushed.has(id)) return
-    onPushToToday(text)
-    setPushed(prev => new Set([...prev, id]))
-  }
-
-  function renderItem(item: { id: string; text: string }, color: string, borderColor: string) {
-    const done = pushed.has(item.id)
-    return (
-      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{
-          ...FONT, flex: 1, fontSize: 13,
-          color: done ? 'rgba(255,255,255,0.25)' : color,
-          textDecoration: done ? 'line-through' : 'none',
-          borderLeft: `2px solid ${borderColor}`,
-          paddingLeft: 8,
-        }}>{item.text}</span>
-        <button
-          onClick={() => push(item.id, item.text)}
-          disabled={done}
-          className="px-btn"
-          style={{
-            ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
-            border: `1px solid ${done ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
-            background: done ? 'transparent' : 'rgba(255,255,255,0.07)',
-            color: done ? 'rgba(255,255,255,0.3)' : '#fff',
-          }}
-        >
-          {done ? '✓' : '→'}
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {urgentItems.length > 0 && (
-        <div>
-          <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 8 }}>
-            <span style={EM}>🚨</span> URGENT
-          </p>
-          {urgentItems.map(item => renderItem(item, 'rgba(255,150,150,0.75)', 'rgba(255,100,100,0.4)'))}
-        </div>
-      )}
-      {memoItems.length > 0 && (
-        <div>
-          <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 8, marginTop: urgentItems.length > 0 ? 4 : 0 }}>
-            <span style={EM}>📌</span> MEMO
-          </p>
-          {memoItems.map(item => renderItem(item, 'rgba(150,200,255,0.75)', 'rgba(100,150,255,0.4)'))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function loadTodayTasks(): TodayTask[] {
   try { return JSON.parse(localStorage.getItem(TODAY_KEY) || '[]') } catch { return [] }
 }
@@ -112,19 +49,21 @@ function saveTodayTasks(tasks: TodayTask[]) {
   try { localStorage.setItem(TODAY_KEY, JSON.stringify(tasks)) } catch {}
 }
 
+/** Normalize area string: "🔍 求职" → "求职" so it matches AREAS[].label */
+function extractAreaLabel(area: string): string {
+  if (!area) return ''
+  const found = AREAS.find(a => area.includes(a.label))
+  return found ? found.label : area
+}
+
 export function StartScreen({
   prefillTask, prefillArea, prefillTaskId,
   onStart, onOpenSettings, completedPomodoros, isLoggedIn,
-  urgentItems = [], memoItems = [],
+  sessionUrgent, sessionMemo, onMarkPushed,
 }: Props) {
-  // Normalize prefillArea: "🔍 求职" → "求职" (extract label for AREAS matching)
-  const normalizedPrefillArea = prefillArea
-    ? (AREAS.find(a => prefillArea.includes(a.label))?.label || prefillArea)
-    : ''
-
   const [taskName,     setTaskName]     = useState(prefillTask   || '')
   const [taskId,       setTaskId]       = useState(prefillTaskId || '')
-  const [selectedArea, setSelectedArea] = useState(normalizedPrefillArea)
+  const [selectedArea, setSelectedArea] = useState(() => extractAreaLabel(prefillArea || ''))
 
   // TODAY'S TASKS
   const [todayTasks,  setTodayTasks]   = useState<TodayTask[]>(loadTodayTasks)
@@ -134,14 +73,11 @@ export function StartScreen({
 
   useEffect(() => { fetchTasks() }, [])
 
-  // Sync prefill values when returning from break (component may already be mounted)
+  // Sync prefill values when props change (e.g. returning from break)
   useEffect(() => {
     if (prefillTask)   setTaskName(prefillTask)
     if (prefillTaskId) setTaskId(prefillTaskId)
-    if (prefillArea) {
-      const norm = AREAS.find(a => prefillArea.includes(a.label))?.label || prefillArea
-      setSelectedArea(norm)
-    }
+    if (prefillArea)   setSelectedArea(extractAreaLabel(prefillArea))
   }, [prefillTask, prefillArea, prefillTaskId])
 
   // Persist today tasks
@@ -163,9 +99,11 @@ export function StartScreen({
 
   function handleStart() {
     if (!canStart) return
-    const areaStr = AREAS.find(a => a.label === selectedArea)
-      ? `${AREAS.find(a => a.label === selectedArea)!.emoji} ${selectedArea}`
+    const areaMatch = AREAS.find(a => a.label === selectedArea)
+    const areaStr = areaMatch
+      ? `${areaMatch.emoji} ${selectedArea}`
       : selectedArea
+    console.log('[StartScreen.handleStart]', { taskName: taskName.trim(), taskId, area: areaStr, selectedArea })
     onStart(taskName.trim(), taskId, areaStr)
     if (prefillTask) window.history.replaceState({}, '', '/')
   }
@@ -181,7 +119,6 @@ export function StartScreen({
   function toggleTodayDone(id: string) {
     setTodayTasks(prev => {
       const updated = prev.map(t => t.id === id ? { ...t, done: !t.done } : t)
-      // Move done to bottom
       return [...updated.filter(t => !t.done), ...updated.filter(t => t.done)]
     })
   }
@@ -190,6 +127,11 @@ export function StartScreen({
     if (task.done) return
     setTaskName(task.text)
     setTaskId('')
+  }
+
+  function pushToToday(noteId: string, text: string, type: 'urgent' | 'memo') {
+    setTodayTasks(prev => [...prev, { id: crypto.randomUUID(), text, done: false }])
+    onMarkPushed(noteId, type)
   }
 
   return (
@@ -262,7 +204,7 @@ export function StartScreen({
           ) : loading ? (
             <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>载入中...</span></p>
           ) : tasks.length === 0 ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>无进行中任务（检查 Settings → Notion Token）</span></p>
+            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>无进行中任务</span></p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {tasks.map(task => (
@@ -289,7 +231,7 @@ export function StartScreen({
 
         {/* ─── TODAY'S TASKS ─── */}
         <div style={CARD_STYLE}>
-          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>📋 TODAY'S TASKS</p>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}><span style={EM}>📋</span> TODAY'S TASKS</p>
 
           {/* Input row */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -334,7 +276,7 @@ export function StartScreen({
                   >
                     {task.done && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>✓</span>}
                   </div>
-                  {/* Task name — click to select */}
+                  {/* Task name — click to select (disabled if done) */}
                   <button
                     onClick={() => selectTodayTask(task)}
                     disabled={task.done}
@@ -357,16 +299,72 @@ export function StartScreen({
           )}
         </div>
 
-
         {/* ─── URGENT / MEMO from current session ─── */}
-        {(urgentItems.length > 0 || memoItems.length > 0) && (
-          <InterruptionPanel
-            urgentItems={urgentItems}
-            memoItems={memoItems}
-            onPushToToday={(text) => {
-              setTodayTasks(prev => [...prev, { id: crypto.randomUUID(), text, done: false }])
-            }}
-          />
+        {(sessionUrgent.length > 0 || sessionMemo.length > 0) && (
+          <div style={{ ...CARD_STYLE, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sessionUrgent.length > 0 && (
+              <div>
+                <p style={{ ...FONT, fontSize: 11, color: '#ff6666', marginBottom: 8 }}>
+                  <span style={EM}>🚨</span> URGENT
+                </p>
+                {sessionUrgent.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      ...FONT, flex: 1, fontSize: 13,
+                      color: item.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,150,150,0.75)',
+                      textDecoration: item.pushed ? 'line-through' : 'none',
+                      borderLeft: '2px solid rgba(255,100,100,0.4)',
+                      paddingLeft: 8,
+                    }}>{item.text}</span>
+                    <button
+                      onClick={() => pushToToday(item.id, item.text, 'urgent')}
+                      disabled={item.pushed}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        border: `1px solid ${item.pushed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
+                        background: item.pushed ? 'transparent' : 'rgba(255,255,255,0.07)',
+                        color: item.pushed ? 'rgba(255,255,255,0.3)' : '#fff',
+                      }}
+                    >
+                      {item.pushed ? '✓' : '→'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {sessionMemo.length > 0 && (
+              <div>
+                <p style={{ ...FONT, fontSize: 11, color: '#aaddff', marginBottom: 8, marginTop: sessionUrgent.length > 0 ? 4 : 0 }}>
+                  <span style={EM}>📌</span> MEMO
+                </p>
+                {sessionMemo.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      ...FONT, flex: 1, fontSize: 13,
+                      color: item.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(150,200,255,0.75)',
+                      textDecoration: item.pushed ? 'line-through' : 'none',
+                      borderLeft: '2px solid rgba(100,150,255,0.4)',
+                      paddingLeft: 8,
+                    }}>{item.text}</span>
+                    <button
+                      onClick={() => pushToToday(item.id, item.text, 'memo')}
+                      disabled={item.pushed}
+                      className="px-btn"
+                      style={{
+                        ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        border: `1px solid ${item.pushed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
+                        background: item.pushed ? 'transparent' : 'rgba(255,255,255,0.07)',
+                        color: item.pushed ? 'rgba(255,255,255,0.3)' : '#fff',
+                      }}
+                    >
+                      {item.pushed ? '✓' : '→'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ─── START ─── */}

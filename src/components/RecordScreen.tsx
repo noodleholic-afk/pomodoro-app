@@ -5,6 +5,7 @@ import type { TimerData } from '../hooks/useTimer'
 
 interface Props {
   timerData: TimerData
+  area: string             // from activeSession
   completedPomodoros: number
   onSubmit: (record: RecordData) => void
   onBack: () => void
@@ -47,7 +48,7 @@ function SelectRow<T extends string>({
   )
 }
 
-export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }: Props) {
+export function RecordScreen({ timerData, area, completedPomodoros, onSubmit, onBack }: Props) {
   const [whatDone,     setWhatDone]     = useState('')
   const [focus,        setFocus]        = useState<number | null>(null)
   const [scene,        setScene]        = useState<typeof SCENES[number] | null>(null)
@@ -81,7 +82,7 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
     onSubmit({
       task_name: timerData.taskName,
       task_id:   timerData.taskId   || undefined,
-      area:      timerData.area     || undefined,
+      area:      area               || undefined,
       engagement: focus             || undefined,
       energy:    energy             || undefined,
       scene:     scene              || undefined,
@@ -136,9 +137,9 @@ export function RecordScreen({ timerData, completedPomodoros, onSubmit, onBack }
           <div style={{ fontSize: 17, color: '#ffaaaa', letterSpacing: '0.05em' }}>
             <span className="zh">{timerData.taskName}</span>
           </div>
-          {timerData.area && (
-            <div style={{ fontSize: 13, color: 'rgba(255,170,170,0.6)', marginTop: 4, letterSpacing: '0.06em' }}>
-              <span className="zh-btn">{timerData.area}</span>
+          {area && (
+            <div style={{ fontSize: 14, color: 'rgba(255,170,170,0.6)', marginTop: 4, letterSpacing: '0.06em' }}>
+              {area}
             </div>
           )}
         </div>

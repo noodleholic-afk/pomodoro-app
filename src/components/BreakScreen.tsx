@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import type { TimerData } from '../hooks/useTimer'
+import type { SessionNote } from '../lib/sessionStore'
 import { unlockAudioContext } from '../lib/audio'
 
 interface Props {
   data: TimerData
+  area: string             // from activeSession
   soundEnabled: boolean
   completedPomodoros: number
   onPause: () => void
   onResume: () => void
   onSkip: () => void
   onToggleSound: () => void
+  sessionUrgent: SessionNote[]
+  sessionMemo: SessionNote[]
 }
 
 const FONT = { fontFamily: 'var(--font)' }
@@ -22,8 +26,9 @@ function fmt(s: number) {
 }
 
 export function BreakScreen({
-  data, soundEnabled, completedPomodoros,
+  data, area, soundEnabled, completedPomodoros,
   onPause, onResume, onSkip, onToggleSound,
+  sessionUrgent, sessionMemo,
 }: Props) {
   const isShort   = data.phase === 'short-break'
   const hi        = isShort ? 'var(--green)' : 'var(--blue)'
@@ -108,9 +113,9 @@ export function BreakScreen({
             <div style={{ fontSize: 17, color: hi, letterSpacing: '0.05em' }}>
               <span className="zh">{data.taskName}</span>
             </div>
-            {data.area && (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4, letterSpacing: '0.06em' }}>
-                <span className="zh-btn">{data.area}</span>
+            {area && (
+              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4, letterSpacing: '0.06em' }}>
+                {area}
               </div>
             )}
           </div>
@@ -157,15 +162,15 @@ export function BreakScreen({
           }} />
         </div>
 
-        {/* Checklist (interruptions) */}
-        {(data.urgentItems.length > 0 || data.memoItems.length > 0) && (
+        {/* Checklist (interruptions from session) */}
+        {(sessionUrgent.length > 0 || sessionMemo.length > 0) && (
           <div style={{ border: '2px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '10px 12px', background: 'rgba(255,255,255,0.03)' }}>
-            {data.urgentItems.length > 0 && (
+            {sessionUrgent.length > 0 && (
               <>
                 <p style={{ ...FONT, fontSize: 12, color: '#ff6666', marginBottom: 6 }}>
                   <span style={EM}>🚨</span> URGENT
                 </p>
-                {data.urgentItems.map(item => (
+                {sessionUrgent.map(item => (
                   <div
                     key={item.id}
                     onClick={() => toggleUrgent(item.id)}
@@ -186,12 +191,12 @@ export function BreakScreen({
                 ))}
               </>
             )}
-            {data.memoItems.length > 0 && (
+            {sessionMemo.length > 0 && (
               <>
-                <p style={{ ...FONT, fontSize: 12, color: '#aaddff', marginBottom: 6, marginTop: data.urgentItems.length > 0 ? 8 : 0 }}>
+                <p style={{ ...FONT, fontSize: 12, color: '#aaddff', marginBottom: 6, marginTop: sessionUrgent.length > 0 ? 8 : 0 }}>
                   <span style={EM}>📌</span> MEMO
                 </p>
-                {data.memoItems.map(item => (
+                {sessionMemo.map(item => (
                   <div
                     key={item.id}
                     onClick={() => toggleMemo(item.id)}

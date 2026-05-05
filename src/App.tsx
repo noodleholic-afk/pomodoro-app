@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { useTimer } from './hooks/useTimer'
 import { useSupabase } from './hooks/useSupabase'
@@ -8,6 +8,11 @@ import { BreakScreen } from './components/BreakScreen'
 import { RecordScreen } from './components/RecordScreen'
 import { Settings } from './components/Settings'
 import { unlockAudioContext } from './lib/audio'
+import {
+  loadActiveSession, saveActiveSession,
+  loadUrgent, saveUrgent, loadMemo, saveMemo, clearNotes, clearAll,
+  type SessionNote, type ActiveSession,
+} from './lib/sessionStore'
 import type { Phase, RecordData, UserSettings, PomodoroSession } from './types'
 import type { TimerData } from './hooks/useTimer'
 import './styles/globals.css'
@@ -51,7 +56,7 @@ function toSessionRow(delta: any): Partial<PomodoroSession> {
   return row
 }
 
-function saveLocal(data: TimerData, endTime: string | null, pauseRemaining: number | null, completedPomodoros: number) {
+function saveTimerLocal(data: TimerData, endTime: string | null, pauseRemaining: number | null, completedPomodoros: number) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({
       phase: data.phase, totalSeconds: data.totalSeconds,
@@ -59,20 +64,19 @@ function saveLocal(data: TimerData, endTime: string | null, pauseRemaining: numb
       completedPomodoros,
       taskName: data.taskName, taskId: data.taskId, area: data.area,
       startedAt: data.startedAt,
-      urgentItems: data.urgentItems, memoItems: data.memoItems,
       ts: Date.now(),
     }))
   } catch { /* quota */ }
 }
 
-function clearLocal() { localStorage.removeItem(LS_KEY) }
+function clearTimerLocal() { localStorage.removeItem(LS_KEY) }
 
-function loadLocal(): any | null {
+function loadTimerLocal(): any | null {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (!raw) return null
     const d = JSON.parse(raw)
-    if (Date.now() - d.ts > 2 * 60 * 60 * 1000) { clearLocal(); return null }
+    if (Date.now() - d.ts > 2 * 60 * 60 * 1000) { clearTimerLocal(); return null }
     return d
   } catch { return null }
 }
@@ -86,9 +90,14 @@ export default function App() {
   const [completedPomodoros, setCompletedPomodoros] = useState(0)
   const [pendingRecord, setPendingRecord] = useState<TimerData | null>(null)
 
+  // ─── Session state (source of truth: localStorage) ───
+  const [activeSession, setActiveSession] = useState<ActiveSession | null>(loadActiveSession)
+  const [sessionUrgent, setSessionUrgent] = useState<SessionNote[]>(loadUrgent)
+  const [sessionMemo, setSessionMemo]     = useState<SessionNote[]>(loadMemo)
+
   const timerRef          = useRef<ReturnType<typeof useTimer> | null>(null)
   const completedRef      = useRef(0)
-  const screenRef         = useRef<Screen>('start')   // 鈫?tracks current screen for callbacks
+  const screenRef         = useRef<Screen>('start')
   const upsertSessionRef  = useRef<((s: any) => void) | null>(null)
 
   // Keep refs in sync
@@ -96,6 +105,10 @@ export default function App() {
   screenRef.current    = screen
 
   const urlParams = getURLParams()
+
+  // Persist session notes to localStorage on every change
+  useEffect(() => { saveUrgent(sessionUrgent) }, [sessionUrgent])
+  useEffect(() => { saveMemo(sessionMemo) }, [sessionMemo])
 
   // Auth
   useEffect(() => {
@@ -110,9 +123,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Re-unlock AudioContext on every user interaction (iOS Safari).
-  // iOS can re-suspend the AudioContext after lock-screen / background.
-  // unlockAudioContext() is a no-op when ctx.state === 'running', so this is cheap.
+  // iOS AudioContext unlock
   useEffect(() => {
     const handler = () => { unlockAudioContext() }
     document.addEventListener('touchstart', handler, { capture: true, passive: true })
@@ -123,22 +134,17 @@ export default function App() {
     }
   }, [])
 
-  // Request notification permission for lock-screen alarms.
-  // Web Audio is silenced when screen is locked; Notification API works reliably.
+  // Request notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {/* ignore */})
+      Notification.requestPermission().catch(() => {})
     }
   }, [])
 
-  /**
-   * Remote session handler.
-   * Guard: if we're currently on record/settings, DON'T override screen or restore timer
-   * (prevents self-triggered Realtime updates from interrupting the record flow).
-   */
+  // Remote session handler
   const handleRemoteSession = useCallback((session: PomodoroSession) => {
     const cur = screenRef.current
-    if (cur === 'record' || cur === 'settings') return   // 鈫?KEY FIX
+    if (cur === 'record' || cur === 'settings') return
 
     timerRef.current?.restoreSession({
       phase: session.phase as Phase,
@@ -155,6 +161,17 @@ export default function App() {
     })
     if (session.completed_count !== undefined) {
       setCompletedPomodoros(session.completed_count)
+    }
+    // Sync active session from remote
+    if (session.task_name && session.area) {
+      const s: ActiveSession = {
+        taskName: session.task_name,
+        area: session.area || '',
+        taskId: session.task_id || '',
+        startedAt: session.started_at || new Date().toISOString(),
+      }
+      setActiveSession(s)
+      saveActiveSession(s)
     }
     if (session.end_time || session.pause_remaining !== null) {
       setScreen('timer')
@@ -197,8 +214,7 @@ export default function App() {
     })
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync completedPomodoros to Supabase (other devices get it)
-  // Use a timeout so it doesn't fire during phase-transition renders
+  // Sync completedPomodoros to Supabase
   useEffect(() => {
     if (!userId) return
     const t = setTimeout(() => {
@@ -207,17 +223,17 @@ export default function App() {
     return () => clearTimeout(t)
   }, [completedPomodoros, userId])
 
-  // On mount: restore from localStorage (works without login, survives lock screen)
+  // On mount: restore from localStorage
   useEffect(() => {
-    const local = loadLocal()
+    const local = loadTimerLocal()
     if (local && (local.endTime || local.pauseRemaining !== null)) {
       timerRef.current?.restoreSession({
         phase: local.phase, total_seconds: local.totalSeconds,
         end_time: local.endTime, pause_remaining: local.pauseRemaining,
         completed_count: local.completedCount,
         task_name: local.taskName, task_id: local.taskId, area: local.area,
-        interruptions_urgent: local.urgentItems || [],
-        interruptions_memo: local.memoItems || [],
+        interruptions_urgent: sessionUrgent.map(n => ({ id: n.id, text: n.text, createdAt: n.createdAt })),
+        interruptions_memo: sessionMemo.map(n => ({ id: n.id, text: n.text, createdAt: n.createdAt })),
         started_at: local.startedAt,
       })
       if (local.completedPomodoros !== undefined) setCompletedPomodoros(local.completedPomodoros)
@@ -225,20 +241,20 @@ export default function App() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Visibility change: restore from localStorage first, then Supabase
+  // Visibility change: restore timer
   useEffect(() => {
     const handler = () => {
       if (document.hidden) return
       if (screenRef.current === 'record' || screenRef.current === 'settings') return
-      const local = loadLocal()
+      const local = loadTimerLocal()
       if (local && (local.endTime || local.pauseRemaining !== null)) {
         timerRef.current?.restoreSession({
           phase: local.phase, total_seconds: local.totalSeconds,
           end_time: local.endTime, pause_remaining: local.pauseRemaining,
           completed_count: local.completedCount,
           task_name: local.taskName, task_id: local.taskId, area: local.area,
-          interruptions_urgent: local.urgentItems || [],
-          interruptions_memo: local.memoItems || [],
+          interruptions_urgent: sessionUrgent.map(n => ({ id: n.id, text: n.text, createdAt: n.createdAt })),
+          interruptions_memo: sessionMemo.map(n => ({ id: n.id, text: n.text, createdAt: n.createdAt })),
           started_at: local.startedAt,
         })
         if (local.completedPomodoros !== undefined) setCompletedPomodoros(local.completedPomodoros)
@@ -250,39 +266,33 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', handler)
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /**
-   * Work completes 鈫?go to Record.
-   * Immediately clear end_time in Supabase so Realtime bounce-backs
-   * don't think there's an active timer and override the screen.
-   */
+  // ─── Phase complete ───
   const handlePhaseComplete = useCallback((phase: Phase, data: TimerData) => {
     if (phase === 'work') {
       setCompletedPomodoros(n => n + 1)
       setPendingRecord({ ...data })
       setScreen('record')
-      clearLocal()
-      // Clear end_time so self-triggered Realtime won't pull back to timer
+      clearTimerLocal()
       upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
-      // Notify user (works even when screen is locked)
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('🍅 番茄完成！', { body: '去记录吧' })
       }
     } else {
-      // Break done → soft-reset (keep interruptions/task) and go to StartScreen
+      // Break done → go to start. Notes + activeSession are preserved in their own localStorage keys.
       timerRef.current?.softReset()
       setScreen('start')
-      clearLocal()
-      // Notify user
+      clearTimerLocal()
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('☕ 休息结束！', { body: '准备下一个番茄' })
       }
     }
   }, [])
 
+  // ─── Session change (timer internals) ───
   const handleSessionChange = useCallback((delta: any) => {
     const row = toSessionRow(delta)
     upsertSessionRef.current?.(row)
-    // Use delta for the fresh values (timerRef.current.data is stale — setData hasn't committed yet)
+    // Save timer state to localStorage using delta (fresh) + base (fallback)
     const base = timerRef.current?.data
     const merged = {
       phase:        delta.phase        ?? base?.phase        ?? 'work',
@@ -292,12 +302,10 @@ export default function App() {
       taskId:       delta.taskId       ?? base?.taskId       ?? '',
       area:         delta.area         ?? base?.area         ?? '',
       startedAt:    delta.startedAt    ?? base?.startedAt    ?? null,
-      urgentItems:  delta.urgentItems  ?? base?.urgentItems  ?? [],
-      memoItems:    delta.memoItems    ?? base?.memoItems    ?? [],
       state:        delta.state        ?? base?.state        ?? 'idle',
       remaining:    delta.remaining    ?? base?.remaining    ?? 1500,
     }
-    saveLocal(
+    saveTimerLocal(
       merged as any,
       delta.endTime ?? delta.end_time ?? null,
       delta.pauseRemaining ?? delta.pause_remaining ?? null,
@@ -337,15 +345,44 @@ export default function App() {
     return () => window.removeEventListener('online', retryQueue)
   }, [])
 
+  // ─── Handlers ───
+
   function handleStart(taskName: string, taskId: string, area: string) {
     console.log('[App.handleStart]', { taskName, taskId, area })
     unlockAudioContext()
+
+    // Save active session to dedicated localStorage key
+    const session: ActiveSession = { taskName, area, taskId, startedAt: new Date().toISOString() }
+    setActiveSession(session)
+    saveActiveSession(session)
+
+    // Start timer (also sets timer.data.area)
     timer.start(taskName, taskId, area)
     setScreen('timer')
     if (urlParams.task_name) window.history.replaceState({}, '', '/')
   }
 
-  // SUBMIT on RecordScreen 鈫?start break phase
+  // Add urgent/memo notes — update BOTH sessionStore and timer.data
+  function handleAddUrgent(text: string) {
+    const note: SessionNote = { id: crypto.randomUUID(), text, pushed: false, createdAt: new Date().toISOString() }
+    setSessionUrgent(prev => [...prev, note])
+    timer.addUrgent(text)
+  }
+
+  function handleAddMemo(text: string) {
+    const note: SessionNote = { id: crypto.randomUUID(), text, pushed: false, createdAt: new Date().toISOString() }
+    setSessionMemo(prev => [...prev, note])
+    timer.addMemo(text)
+  }
+
+  function handlePurge() {
+    setSessionUrgent([])
+    setSessionMemo([])
+    clearNotes()
+    timer.clearInterruptions()
+  }
+
+  // SUBMIT on RecordScreen → start break phase
   function handleRecord(record: RecordData) {
     submitRecord(record)
     timer.startNextPhase(completedPomodoros)
@@ -353,30 +390,44 @@ export default function App() {
     setPendingRecord(null)
   }
 
-  // RESTART on RecordScreen 鈫?undo last count, back to start
+  // RESTART → undo last count, back to start, clear EVERYTHING
   function handleBackFromRecord() {
     setCompletedPomodoros(n => Math.max(0, n - 1))
     timer.reset()
+    setActiveSession(null)
+    setSessionUrgent([])
+    setSessionMemo([])
+    clearAll()
     setScreen('start')
     setPendingRecord(null)
-    clearLocal()
+    clearTimerLocal()
   }
 
-  // SKIP work phase (debug) 鈫?go to record immediately
+  // SKIP work phase (debug) → go to record immediately
   function handleSkipWork() {
-    // Clear end_time first so Realtime doesn't bounce back
     upsertSessionRef.current?.({ end_time: null, pause_remaining: null } as any)
     setCompletedPomodoros(n => n + 1)
     setPendingRecord({ ...timer.data })
     setScreen('record')
-    clearLocal()
+    clearTimerLocal()
   }
 
-  // SKIP break → soft-reset (keep interruptions) and re-select task
+  // SKIP break → back to start (keep notes + activeSession)
   function handleSkipBreak() {
     timer.softReset()
     setScreen('start')
-    clearLocal()
+    clearTimerLocal()
+  }
+
+  // RESET from Timer → clear all
+  function handleReset() {
+    timer.reset()
+    setActiveSession(null)
+    setSessionUrgent([])
+    setSessionMemo([])
+    clearAll()
+    setScreen('start')
+    clearTimerLocal()
   }
 
   async function handleLogin(email: string, password: string) {
@@ -394,7 +445,7 @@ export default function App() {
     setScreen(timer.data.state === 'idle' ? 'start' : 'timer')
   }
 
-  // 鈹€鈹€ Routing 鈹€鈹€
+  // ─── Routing ───
 
   if (screen === 'settings') {
     return (
@@ -414,6 +465,7 @@ export default function App() {
     return (
       <RecordScreen
         timerData={pendingRecord}
+        area={activeSession?.area || ''}
         completedPomodoros={completedPomodoros}
         onSubmit={handleRecord}
         onBack={handleBackFromRecord}
@@ -425,16 +477,19 @@ export default function App() {
     return (
       <Timer
         data={timer.data}
+        area={activeSession?.area || ''}
         soundEnabled={soundEnabled}
         completedPomodoros={completedPomodoros}
         onPause={timer.pause}
         onResume={timer.resume}
-        onReset={() => { timer.reset(); setScreen('start'); clearLocal() }}
+        onReset={handleReset}
         onSkip={handleSkipWork}
         onToggleSound={() => setSoundEnabled(v => !v)}
-        onAddUrgent={timer.addUrgent}
-        onAddMemo={timer.addMemo}
-        onPurge={timer.clearInterruptions}
+        onAddUrgent={handleAddUrgent}
+        onAddMemo={handleAddMemo}
+        onPurge={handlePurge}
+        sessionUrgent={sessionUrgent}
+        sessionMemo={sessionMemo}
       />
     )
   }
@@ -443,27 +498,37 @@ export default function App() {
     return (
       <BreakScreen
         data={timer.data}
+        area={activeSession?.area || ''}
         soundEnabled={soundEnabled}
         completedPomodoros={completedPomodoros}
         onPause={timer.pause}
         onResume={timer.resume}
         onSkip={handleSkipBreak}
         onToggleSound={() => setSoundEnabled(v => !v)}
+        sessionUrgent={sessionUrgent}
+        sessionMemo={sessionMemo}
       />
     )
   }
 
   return (
     <StartScreen
-      prefillTask={urlParams.task_name || timer.data.taskName}
-      prefillArea={urlParams.area || timer.data.area}
-      prefillTaskId={urlParams.task_id || timer.data.taskId}
+      prefillTask={urlParams.task_name || activeSession?.taskName || ''}
+      prefillArea={urlParams.area || activeSession?.area || ''}
+      prefillTaskId={urlParams.task_id || activeSession?.taskId || ''}
       onStart={handleStart}
       onOpenSettings={() => setScreen('settings')}
       completedPomodoros={completedPomodoros}
       isLoggedIn={!!userId}
-      urgentItems={timer.data.urgentItems}
-      memoItems={timer.data.memoItems}
+      sessionUrgent={sessionUrgent}
+      sessionMemo={sessionMemo}
+      onMarkPushed={(id, type) => {
+        if (type === 'urgent') {
+          setSessionUrgent(prev => prev.map(n => n.id === id ? { ...n, pushed: true } : n))
+        } else {
+          setSessionMemo(prev => prev.map(n => n.id === id ? { ...n, pushed: true } : n))
+        }
+      }}
     />
   )
 }
