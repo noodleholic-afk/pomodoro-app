@@ -114,6 +114,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   }, [])
 
   const start = useCallback((taskName: string, taskId: string, area: string) => {
+    console.log('[useTimer.start]', { taskName, taskId, area })
     const total = PHASE_DURATIONS['work']
     const endTime = new Date(Date.now() + total * 1000).toISOString()
     const now = new Date().toISOString()

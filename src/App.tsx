@@ -282,14 +282,27 @@ export default function App() {
   const handleSessionChange = useCallback((delta: any) => {
     const row = toSessionRow(delta)
     upsertSessionRef.current?.(row)
-    if (timerRef.current) {
-      saveLocal(
-        timerRef.current.data,
-        delta.endTime ?? delta.end_time ?? null,
-        delta.pauseRemaining ?? delta.pause_remaining ?? null,
-        completedRef.current,
-      )
+    // Use delta for the fresh values (timerRef.current.data is stale — setData hasn't committed yet)
+    const base = timerRef.current?.data
+    const merged = {
+      phase:        delta.phase        ?? base?.phase        ?? 'work',
+      totalSeconds: delta.totalSeconds ?? base?.totalSeconds ?? 1500,
+      completedCount: delta.completedCount ?? base?.completedCount ?? 0,
+      taskName:     delta.taskName     ?? base?.taskName     ?? '',
+      taskId:       delta.taskId       ?? base?.taskId       ?? '',
+      area:         delta.area         ?? base?.area         ?? '',
+      startedAt:    delta.startedAt    ?? base?.startedAt    ?? null,
+      urgentItems:  delta.urgentItems  ?? base?.urgentItems  ?? [],
+      memoItems:    delta.memoItems    ?? base?.memoItems    ?? [],
+      state:        delta.state        ?? base?.state        ?? 'idle',
+      remaining:    delta.remaining    ?? base?.remaining    ?? 1500,
     }
+    saveLocal(
+      merged as any,
+      delta.endTime ?? delta.end_time ?? null,
+      delta.pauseRemaining ?? delta.pause_remaining ?? null,
+      completedRef.current,
+    )
   }, [])
 
   const timer = useTimer({
@@ -325,6 +338,7 @@ export default function App() {
   }, [])
 
   function handleStart(taskName: string, taskId: string, area: string) {
+    console.log('[App.handleStart]', { taskName, taskId, area })
     unlockAudioContext()
     timer.start(taskName, taskId, area)
     setScreen('timer')
