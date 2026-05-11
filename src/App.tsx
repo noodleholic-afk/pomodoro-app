@@ -10,7 +10,7 @@ import { Settings } from './components/Settings'
 import { unlockAudioContext } from './lib/audio'
 import {
   loadActiveSession, saveActiveSession,
-  loadUrgent, saveUrgent, loadMemo, saveMemo, clearNotes, clearAll,
+  loadUrgent, saveUrgent, loadMemo, saveMemo, clearNotes,
   type SessionNote, type ActiveSession,
 } from './lib/sessionStore'
 import type { Phase, RecordData, UserSettings, PomodoroSession } from './types'
@@ -390,14 +390,11 @@ export default function App() {
     setPendingRecord(null)
   }
 
-  // RESTART → undo last count, back to start, clear EVERYTHING
+  // RESTART → undo last count, back to start, clear active session but keep notes
   function handleBackFromRecord() {
     setCompletedPomodoros(n => Math.max(0, n - 1))
     timer.reset()
     setActiveSession(null)
-    setSessionUrgent([])
-    setSessionMemo([])
-    clearAll()
     setScreen('start')
     setPendingRecord(null)
     clearTimerLocal()
@@ -419,13 +416,10 @@ export default function App() {
     clearTimerLocal()
   }
 
-  // RESET from Timer → clear all
+  // RESET from Timer → clear active session but keep notes (use PURGE to clear notes)
   function handleReset() {
     timer.reset()
     setActiveSession(null)
-    setSessionUrgent([])
-    setSessionMemo([])
-    clearAll()
     setScreen('start')
     clearTimerLocal()
   }

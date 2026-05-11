@@ -1,5 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'Zpix';
+  src: url('https://cdn.jsdelivr.net/npm/zpix@3.0.0/fonts/zpix.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/npm/zpix@3.0.0/fonts/zpix.ttf')   format('truetype');
+  font-display: swap;
+}
 
 /* ─── Design tokens ─── */
 :root {
@@ -13,7 +20,7 @@
   --blue:        #88aaff;
   --blue-dim:    #0a1030;
   --border:      rgba(255,255,255,0.12);
-  --font:        'Press Start 2P', 'Noto Sans SC', monospace;
+  --font:        'Press Start 2P', 'Zpix', monospace;
 }
 
 /* ─── Base ─── */
@@ -38,6 +45,8 @@ body {
   font-family: var(--font);
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* #root is the React mount point. It's position:fixed like body,
@@ -112,16 +121,18 @@ input:focus, textarea:focus, select:focus {
 }
 ::placeholder { color: rgba(255,255,255,0.25); }
 
-/* ─── Chinese text offset — system-ui baseline sits lower than Press Start 2P ─── */
-/* Chinese text in standalone labels — shift up to align baseline with Press Start 2P */
+/* ─── Chinese text — Zpix pixel font ─── */
+/* Standalone Chinese labels */
 .zh {
+  font-family: 'Zpix', monospace;
   position: relative;
   top: -5px;
   display: inline-block;
   letter-spacing: 0.15em;
 }
-/* Chinese inside buttons (mixed with emoji/English) — size only, no shift */
+/* Chinese inside buttons (mixed with emoji/English) */
 .zh-btn {
+  font-family: 'Zpix', monospace;
   letter-spacing: 0.12em;
 }
 
