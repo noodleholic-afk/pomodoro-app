@@ -5,6 +5,7 @@ import {
   playWorkAlarm,
   playBreakAlarm,
   resumeAudioContext,
+  isTicksScheduled,
 } from '../lib/audio'
 import type { Phase } from '../types'
 
@@ -16,6 +17,8 @@ export function useAudio(soundEnabled: boolean) {
     if (remaining === lastTickSecRef.current) return
     lastTickSecRef.current = remaining
     resumeAudioContext()
+    // Skip playback if pre-scheduled ticks are active (they handle audio independently)
+    if (isTicksScheduled()) return
     if (phase === 'work') playWorkTick()
     else playBreakTick()
   }, [soundEnabled])

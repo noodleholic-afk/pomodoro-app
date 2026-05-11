@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Phase, TimerState, Interruption } from '../types'
 import { PHASE_DURATIONS, POMODOROS_BEFORE_LONG_BREAK } from '../lib/constants'
 import { useAudio } from './useAudio'
+import { scheduleWorkTicks, cancelScheduledTicks } from '../lib/audio'
 
 export interface TimerData {
   phase: Phase
@@ -138,6 +139,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     }
     setData(next)
     onSessionChange({ ...next, endTime, pauseRemaining: null })
+    scheduleWorkTicks(total)   // pre-schedule all ticks on audio thread
   }, [onSessionChange])
 
   const pause = useCallback(() => {
@@ -145,6 +147,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     endTimeRef.current = null
     pauseRemainingRef.current = rem
     stateRef.current = 'paused'
+    cancelScheduledTicks()     // mute all future pre-scheduled ticks
     setData(prev => ({ ...prev, state: 'paused', remaining: rem }))
     onSessionChange({ state: 'paused', endTime: null, pauseRemaining: rem })
   }, [onSessionChange])
@@ -157,9 +160,11 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     stateRef.current = 'running'
     setData(prev => ({ ...prev, state: 'running', remaining: rem }))
     onSessionChange({ state: 'running', endTime, pauseRemaining: null })
+    scheduleWorkTicks(rem)     // re-schedule remaining ticks
   }, [onSessionChange])
 
   const reset = useCallback(() => {
+    cancelScheduledTicks()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -182,6 +187,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   /** Soft reset: end the current phase but KEEP urgentItems/memoItems, taskName, area.
    *  Used when a break completes — user returns to StartScreen with notes intact. */
   const softReset = useCallback(() => {
+    cancelScheduledTicks()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -209,6 +215,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   }, [onSessionChange])
 
   const startNextPhase = useCallback((completedPomodoros: number) => {
+    cancelScheduledTicks()   // stop work ticks before break
     const isLongBreak = completedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0
     const phase: Phase = completedPomodoros === 0 ? 'work' : isLongBreak ? 'long-break' : 'short-break'
     const total = PHASE_DURATIONS[phase]

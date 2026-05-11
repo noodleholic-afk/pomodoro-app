@@ -16,6 +16,10 @@
 let audioCtx: AudioContext | null = null
 let keepAliveSource: AudioBufferSourceNode | null = null
 
+// Pre-scheduled tick nodes — routed through a master gain so we can cancel all at once
+let tickMasterGain: GainNode | null = null
+let ticksActive = false
+
 function getCtx(): AudioContext | null {
   return audioCtx
 }
@@ -55,6 +59,51 @@ function setupMediaSession() {
     navigator.mediaSession.playbackState = 'playing'
   } catch { /* API unavailable */ }
 }
+
+// ─── Pre-scheduled ticks ──────────────────────────────────────────────────────
+// Schedule every tick sound up-front using the AudioContext hardware clock.
+// These play on the audio thread even when the JS thread is frozen (lock screen).
+//
+// Uses a master GainNode so all future ticks can be muted instantly by setting gain=0.
+export function scheduleWorkTicks(remainingSeconds: number) {
+  cancelScheduledTicks()
+  const ctx = getCtx()
+  if (!ctx || remainingSeconds <= 0) return
+
+  tickMasterGain = ctx.createGain()
+  tickMasterGain.gain.value = 1
+  tickMasterGain.connect(ctx.destination)
+
+  const now = ctx.currentTime
+  const count = Math.min(Math.ceil(remainingSeconds), 1800) // cap at 30 min
+  for (let i = 1; i <= count; i++) {
+    const t = now + i
+    const osc  = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'square'
+    osc.frequency.value = 1000
+    gain.gain.setValueAtTime(0.06, t)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05)
+    osc.connect(gain)
+    gain.connect(tickMasterGain)
+    osc.start(t)
+    osc.stop(t + 0.05)
+  }
+  ticksActive = true
+}
+
+export function cancelScheduledTicks() {
+  if (tickMasterGain) {
+    // Mute instantly — this silences all future pre-scheduled oscillators
+    tickMasterGain.gain.setValueAtTime(0, tickMasterGain.context.currentTime)
+    tickMasterGain.disconnect()
+    tickMasterGain = null
+  }
+  ticksActive = false
+}
+
+/** True while pre-scheduled ticks are active (prevents double-tick on active screen) */
+export function isTicksScheduled(): boolean { return ticksActive }
 
 // ─── Tone primitives ──────────────────────────────────────────────────────────
 function playTone(
