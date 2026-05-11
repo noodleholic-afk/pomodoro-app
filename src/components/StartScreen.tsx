@@ -238,13 +238,12 @@ export function StartScreen({
           <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}><span style={EM}>📋</span> TODAY'S TASKS</p>
 
           {/* Input row */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8, width: '100%', minWidth: 0 }}>
             <input
               style={{
-                fontFamily: 'Zpix, monospace', flex: 1, fontSize: 16, padding: '6px 10px',
+                fontFamily: 'Zpix, monospace', flex: '1 1 0', minWidth: 0, fontSize: 16, padding: '6px 10px',
                 borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none',
-                lineHeight: '1.2', height: 38,
               }}
               placeholder="添加任务..."
               value={todayInput}
