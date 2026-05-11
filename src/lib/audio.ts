@@ -1,27 +1,62 @@
 /**
- * Audio module for Pomodoro — iOS Safari safe.
+ * Audio module for Pomodoro — iOS Safari safe, lock-screen persistent.
  *
- * Rules:
- * 1. AudioContext is created ONLY inside unlockAudioContext(), which must be
- *    called synchronously from a user-gesture handler (click / touchend).
- *    Creating an AudioContext before a gesture produces a suspended context
- *    that iOS will never allow to play.
+ * Lock-screen keep-alive strategy (two layers):
+ * 1. startKeepAlive() — loops a near-silent BufferSource so the AudioContext
+ *    is always producing output. iOS suspends idle contexts on lock; a looping
+ *    source (even at 1e-8 amplitude) prevents that.
+ * 2. setupMediaSession() — registers a MediaSession with playbackState='playing'
+ *    so the OS treats this as an active media app and won't kill the audio session.
  *
- * 2. ctx.resume() is called UNCONDITIONALLY in unlockAudioContext() on every
- *    gesture. iOS's ctx.state is unreliable — it can report "running" while
- *    audio is still blocked, especially after a lock-screen or background event.
- *
- * 3. All play*() functions guard with `if (!audioCtx) return` so they silently
- *    no-op if called before the first user gesture.
+ * Unlock rules (unchanged):
+ * - AudioContext created ONLY inside unlockAudioContext() (user-gesture gated).
+ * - ctx.resume() called unconditionally on every gesture (iOS state is unreliable).
  */
 
 let audioCtx: AudioContext | null = null
+let keepAliveSource: AudioBufferSourceNode | null = null
 
-/** Returns the shared context, or null if not yet unlocked by a gesture. */
 function getCtx(): AudioContext | null {
   return audioCtx
 }
 
+// ─── Keep-alive loop ──────────────────────────────────────────────────────────
+// Plays a 2-second looping buffer of near-silence (1Hz sine at 1e-8 amplitude).
+// Inaudible to humans but keeps the AudioContext "active" through a lock screen.
+function startKeepAlive(ctx: AudioContext) {
+  if (keepAliveSource) return
+  try {
+    const sr  = ctx.sampleRate
+    const buf = ctx.createBuffer(1, sr * 2, sr)
+    const ch  = buf.getChannelData(0)
+    for (let i = 0; i < ch.length; i++) {
+      ch[i] = Math.sin(2 * Math.PI * i / sr) * 1e-8
+    }
+    keepAliveSource = ctx.createBufferSource()
+    keepAliveSource.buffer = buf
+    keepAliveSource.loop   = true
+    keepAliveSource.connect(ctx.destination)
+    keepAliveSource.start()
+  } catch { /* ignore */ }
+}
+
+// ─── MediaSession ─────────────────────────────────────────────────────────────
+// Tells the OS this is an active media session so it won't terminate audio.
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  'Pomodoro Timer',
+      artist: 'Focus',
+    })
+    // Handlers are required — iOS ignores sessions with no registered handlers.
+    navigator.mediaSession.setActionHandler('play',  () => { audioCtx?.resume().catch(() => {}) })
+    navigator.mediaSession.setActionHandler('pause', () => { /* ignore — keep running */ })
+    navigator.mediaSession.playbackState = 'playing'
+  } catch { /* API unavailable */ }
+}
+
+// ─── Tone primitives ──────────────────────────────────────────────────────────
 function playTone(
   ctx: AudioContext,
   freq: number,
@@ -50,6 +85,7 @@ function playTone(
   osc.stop((startTime ?? ctx.currentTime) + duration)
 }
 
+// ─── Public sound API ─────────────────────────────────────────────────────────
 export function playWorkTick() {
   const ctx = getCtx()
   if (!ctx) return
@@ -82,43 +118,40 @@ export function playBreakAlarm() {
 
 /**
  * MUST be called synchronously inside a user-gesture handler.
- *
- * - Creates the AudioContext on first call (lazy, gesture-gated).
- * - Calls ctx.resume() unconditionally — iOS ctx.state is unreliable;
- *   always re-issuing resume() is the only reliable way to re-activate
- *   after lock-screen / tab-switch / background.
- * - Plays a 1-frame silent buffer: required by iOS to mark the context
- *   as "user-activated" so future async playback is permitted.
+ * Creates (once) and resumes the AudioContext, then starts keep-alive.
  */
 export function unlockAudioContext() {
-  // Create lazily — only ever inside a user gesture.
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    setupMediaSession()
   }
 
-  // Unconditional resume — do NOT guard with ctx.state check.
-  // iOS ctx.state is not reliable; calling resume() when already running is a no-op.
-  audioCtx.resume().catch(() => {/* ignore */})
+  // Unconditional resume — iOS ctx.state is unreliable.
+  audioCtx.resume().catch(() => {})
 
-  // Silent 1-frame buffer: the canonical iOS unlock trick.
+  // Silent 1-frame buffer — canonical iOS unlock trick.
   try {
     const buf = audioCtx.createBuffer(1, 1, 22050)
     const src = audioCtx.createBufferSource()
     src.buffer = buf
     src.connect(audioCtx.destination)
     src.start(0)
-  } catch {
-    // Very old WebKit may throw — swallow silently.
-  }
+  } catch { /* very old WebKit */ }
+
+  // Start keep-alive loop (no-op if already running).
+  startKeepAlive(audioCtx)
 }
 
 /**
- * Best-effort resume called from async contexts (e.g. setInterval tick).
- * Not a substitute for unlockAudioContext() — use this only to attempt
- * recovery when the context was suspended between ticks.
+ * Best-effort resume from async contexts (e.g. setInterval tick).
+ * Also updates MediaSession playbackState so the OS knows we're still active.
  */
 export function resumeAudioContext() {
-  if (audioCtx) {
-    audioCtx.resume().catch(() => {/* ignore */})
-  }
+  if (!audioCtx) return
+  audioCtx.resume().catch(() => {})
+  try {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
+  } catch { /* ignore */ }
 }

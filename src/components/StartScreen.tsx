@@ -153,8 +153,8 @@ export function StartScreen({
       {/* ─── Header bar ─── */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">🍅</span>
-          <span style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>POMO</span>
+          <span style={{ lineHeight: 1, fontSize: 16 }}>🍅</span>
+          <span style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1 }}>POMO</span>
         </div>
         <div className="flex items-center gap-3">
           {completedPomodoros > 0 && (

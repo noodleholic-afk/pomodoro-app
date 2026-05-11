@@ -160,8 +160,8 @@ export function Timer({
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <span style={EM} className="text-base">🍅</span>
-          <span style={{ color: 'var(--work-hi)', fontSize: 14, ...FONT }}>WORK</span>
+          <span style={{ ...EM, lineHeight: 1, fontSize: 16 }}>🍅</span>
+          <span style={{ color: 'var(--work-hi)', fontSize: 14, lineHeight: 1, ...FONT }}>WORK</span>
         </div>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, ...FONT }}>25 MIN</span>
       </div>
