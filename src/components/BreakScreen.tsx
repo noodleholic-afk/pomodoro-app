@@ -183,7 +183,7 @@ export function BreakScreen({
                       transition: 'background 0.15s',
                     }} />
                     <span style={{
-                      ...FONT, fontSize: 13,
+                      fontFamily: 'Zpix, monospace', fontSize: 13,
                       color: checkedUrgent.has(item.id) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)',
                       textDecoration: checkedUrgent.has(item.id) ? 'line-through' : 'none',
                     }}>{item.text}</span>
@@ -209,7 +209,7 @@ export function BreakScreen({
                       transition: 'background 0.15s',
                     }} />
                     <span style={{
-                      ...FONT, fontSize: 13,
+                      fontFamily: 'Zpix, monospace', fontSize: 13,
                       color: checkedMemo.has(item.id) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)',
                       textDecoration: checkedMemo.has(item.id) ? 'line-through' : 'none',
                     }}>{item.text}</span>

@@ -204,7 +204,7 @@ export function StartScreen({
             )}
           </div>
           {!isLoggedIn ? (
-            <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '4px 0' }}><span style={EM}>⚙</span> <span className="zh" style={{ fontSize: 15 }}>登录后显示</span></p>
+            <p style={{ fontFamily: 'Zpix, monospace', fontSize: 13, color: 'rgba(255,255,255,0.2)', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 5 }}><span style={EM}>⚙</span> 登录后显示</p>
           ) : loading ? (
             <p style={{ ...FONT, fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px 0' }}><span className="zh" style={{ fontSize: 15 }}>载入中...</span></p>
           ) : tasks.length === 0 ? (
