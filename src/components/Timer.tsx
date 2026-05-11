@@ -187,7 +187,7 @@ export function Timer({
           background: 'rgba(170,51,51,0.12)',
           textAlign: 'center',
         }}>
-          <div className="blink-task" style={{ fontSize: 21, color: '#ffaaaa', fontFamily: 'Zpix, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="blink-task" style={{ fontSize: 21, fontWeight: 700, color: '#ffaaaa', fontFamily: 'Zpix, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {data.taskName}
           </div>
           {area && (
