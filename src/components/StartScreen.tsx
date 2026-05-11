@@ -183,7 +183,7 @@ export function StartScreen({
                   color: selectedArea === area.label ? '#ff8888' : 'rgba(255,255,255,0.65)',
                   borderRadius: 6, padding: '10px',
                   fontSize: 17, cursor: 'pointer', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8,
                 }}
               >
                 <span style={EM}>{area.emoji}</span> <span className="zh-btn">{area.label}</span>
