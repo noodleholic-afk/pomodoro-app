@@ -3,8 +3,7 @@
 
 @font-face {
   font-family: 'Zpix';
-  src: url('https://cdn.jsdelivr.net/npm/zpix@3.0.0/fonts/zpix.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/npm/zpix@3.0.0/fonts/zpix.ttf')   format('truetype');
+  src: url('/fonts/zpix.ttf') format('truetype');
   font-display: swap;
 }
 
