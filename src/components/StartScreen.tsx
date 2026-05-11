@@ -168,7 +168,7 @@ export function StartScreen({
 
         {/* ─── Area grid ─── */}
         <div style={CARD_STYLE}>
-          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}><span className="zh" style={{ fontSize: 14 }}>领域</span></p>
+          <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}><span style={{ fontFamily: 'Zpix, monospace', fontSize: 15 }}>领域</span></p>
           <div className="grid grid-cols-2 gap-1.5">
             {AREAS.map(area => (
               <button
@@ -194,7 +194,10 @@ export function StartScreen({
         {/* ─── Notion tasks ─── */}
         <div style={CARD_STYLE}>
           <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-            <p style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Notion <span className="zh" style={{ fontSize: 14 }}>任务</span></p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontFamily: "'Press Start 2P', monospace" }}>Notion</span>
+                <span style={{ fontFamily: 'Zpix, monospace', fontSize: 13 }}>任务</span>
+              </p>
             {isLoggedIn && (
               <button onClick={fetchTasks} className="px-btn" style={{ ...FONT, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>↻</button>
             )}
@@ -237,9 +240,10 @@ export function StartScreen({
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <input
               style={{
-                ...FONT, flex: 1, fontSize: 16, padding: '6px 10px',
+                fontFamily: 'Zpix, monospace', flex: 1, fontSize: 16, padding: '6px 10px',
                 borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none',
+                lineHeight: '1.2', height: 38,
               }}
               placeholder="添加任务..."
               value={todayInput}
@@ -282,7 +286,7 @@ export function StartScreen({
                     disabled={task.done}
                     className="px-btn"
                     style={{
-                      ...FONT, flex: 1, textAlign: 'left', fontSize: 13,
+                      fontFamily: 'Zpix, monospace', flex: 1, textAlign: 'left', fontSize: 16,
                       padding: '6px 10px', borderRadius: 6,
                       background: taskName === task.text && !taskId ? 'var(--work-lo)' : 'rgba(255,255,255,0.04)',
                       border: `2px solid ${taskName === task.text && !taskId ? 'var(--work-border)' : 'rgba(255,255,255,0.08)'}`,

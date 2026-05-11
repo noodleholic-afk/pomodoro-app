@@ -75,7 +75,7 @@ function WorkInterruption({
         {urgentOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {urgentItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
+              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
@@ -101,7 +101,7 @@ function WorkInterruption({
         {memoOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {memoItems.map(i => (
-              <p key={i.id} style={{ ...FONT, fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'center', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
+              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
