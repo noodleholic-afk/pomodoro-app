@@ -315,7 +315,7 @@ export function StartScreen({
                 {sessionUrgent.map(item => (
                   <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{
-                      ...FONT, flex: 1, fontSize: 13,
+                      fontFamily: 'Zpix, monospace', flex: 1, fontSize: 13,
                       color: item.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,150,150,0.75)',
                       textDecoration: item.pushed ? 'line-through' : 'none',
                       borderLeft: '2px solid rgba(255,100,100,0.4)',
@@ -326,7 +326,7 @@ export function StartScreen({
                       disabled={item.pushed}
                       className="px-btn"
                       style={{
-                        ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        fontFamily: 'Zpix, monospace', fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
                         border: `1px solid ${item.pushed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
                         background: item.pushed ? 'transparent' : 'rgba(255,255,255,0.07)',
                         color: item.pushed ? 'rgba(255,255,255,0.3)' : '#fff',
@@ -346,7 +346,7 @@ export function StartScreen({
                 {sessionMemo.map(item => (
                   <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{
-                      ...FONT, flex: 1, fontSize: 13,
+                      fontFamily: 'Zpix, monospace', flex: 1, fontSize: 13,
                       color: item.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(150,200,255,0.75)',
                       textDecoration: item.pushed ? 'line-through' : 'none',
                       borderLeft: '2px solid rgba(100,150,255,0.4)',
@@ -357,7 +357,7 @@ export function StartScreen({
                       disabled={item.pushed}
                       className="px-btn"
                       style={{
-                        ...FONT, fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
+                        fontFamily: 'Zpix, monospace', fontSize: 12, padding: '3px 8px', borderRadius: 4, flexShrink: 0,
                         border: `1px solid ${item.pushed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.25)'}`,
                         background: item.pushed ? 'transparent' : 'rgba(255,255,255,0.07)',
                         color: item.pushed ? 'rgba(255,255,255,0.3)' : '#fff',

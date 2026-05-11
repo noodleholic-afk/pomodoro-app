@@ -75,11 +75,11 @@ function WorkInterruption({
         {urgentOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {urgentItems.map(i => (
-              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
+              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 14, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,100,100,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                style={{ ...FONT, flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 13, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
+                style={{ fontFamily: 'Zpix, monospace', flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 14, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="Note..."
                 value={urgentInput}
                 onChange={e => setUrgentInput(e.target.value)}
@@ -101,11 +101,11 @@ function WorkInterruption({
         {memoOpen && (
           <div style={{ padding: '0 8px 8px' }}>
             {memoItems.map(i => (
-              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 13, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
+              <p key={i.id} style={{ fontFamily: 'Zpix, monospace', fontSize: 14, color: i.pushed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(100,150,255,0.4)', paddingLeft: 6, marginBottom: 4, textAlign: 'left', textDecoration: i.pushed ? 'line-through' : 'none' }}>{i.text}</p>
             ))}
             <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
               <input
-                style={{ ...FONT, flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 13, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
+                style={{ fontFamily: 'Zpix, monospace', flex: 1, minWidth: 0, padding: '4px 6px', fontSize: 14, borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#fff', outline: 'none' }}
                 placeholder="Note..."
                 value={memoInput}
                 onChange={e => setMemoInput(e.target.value)}
