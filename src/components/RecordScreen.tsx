@@ -34,14 +34,15 @@ function SelectRow<T extends string>({
             onClick={() => onChange(value === opt ? null : opt)}
             className="px-btn"
             style={{
-              ...FONT,
+              fontFamily: 'Zpix, monospace',
               fontSize: 17,
-              padding: '5px 10px', borderRadius: 4,
+              padding: '8px 12px', borderRadius: 4,
               border: `1px solid ${value === opt ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
               background: value === opt ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
               color: value === opt ? '#fff' : 'rgba(255,255,255,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          ><span className="zh-btn">{opt}</span></button>
+          >{opt}</button>
         ))}
       </div>
     </div>
@@ -154,7 +155,7 @@ export function RecordScreen({ timerData, area, completedPomodoros, onSubmit, on
             </p>
             <textarea
               style={{
-                ...FONT, fontSize: 14, color: '#fff',
+                fontFamily: 'Zpix, monospace', fontSize: 13, color: '#fff',
                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 4, padding: '6px 8px',
                 resize: 'none', width: '100%', outline: 'none',
@@ -224,7 +225,7 @@ export function RecordScreen({ timerData, area, completedPomodoros, onSubmit, on
           <div style={{ display: 'flex', gap: 6 }}>
             <input
               style={{
-                ...FONT, flex: 1, fontSize: 11, padding: '6px 8px', borderRadius: 4,
+                fontFamily: 'Zpix, monospace', flex: 1, fontSize: 13, padding: '6px 8px', borderRadius: 4,
                 border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.06)', color: '#fff', outline: 'none',
               }}
