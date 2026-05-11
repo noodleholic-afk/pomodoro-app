@@ -187,8 +187,8 @@ export function Timer({
           background: 'rgba(170,51,51,0.12)',
           textAlign: 'center',
         }}>
-          <div className="blink-task" style={{ fontSize: 19, color: '#ffaaaa', letterSpacing: '0.05em' }}>
-            <span className="zh">{data.taskName}</span>
+          <div className="blink-task" style={{ fontSize: 19, color: '#ffaaaa', fontFamily: 'Zpix, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {data.taskName}
           </div>
           {area && (
             <div style={{ fontSize: 15, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em' }}>

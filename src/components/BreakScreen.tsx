@@ -110,8 +110,8 @@ export function BreakScreen({
             background: lo,
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: 17, color: hi, letterSpacing: '0.05em' }}>
-              <span className="zh">{data.taskName}</span>
+            <div style={{ fontSize: 17, color: hi, fontFamily: 'Zpix, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {data.taskName}
             </div>
             {area && (
               <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4, letterSpacing: '0.06em' }}>

@@ -134,8 +134,8 @@ export function RecordScreen({ timerData, area, completedPomodoros, onSubmit, on
           background: 'rgba(170,51,51,0.12)',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: 17, color: '#ffaaaa', letterSpacing: '0.05em' }}>
-            <span className="zh">{timerData.taskName}</span>
+          <div style={{ fontSize: 17, color: '#ffaaaa', fontFamily: 'Zpix, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {timerData.taskName}
           </div>
           {area && (
             <div style={{ fontSize: 14, color: 'rgba(255,170,170,0.6)', marginTop: 4, letterSpacing: '0.06em' }}>
