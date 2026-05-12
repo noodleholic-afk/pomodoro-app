@@ -3,6 +3,7 @@ import type { Phase, TimerState, Interruption } from '../types'
 import { PHASE_DURATIONS, POMODOROS_BEFORE_LONG_BREAK } from '../lib/constants'
 import { useAudio } from './useAudio'
 import { scheduleWorkTicks, cancelScheduledTicks } from '../lib/audio'
+import { scheduleNotification, cancelNotification } from '../lib/notifications'
 
 export interface TimerData {
   phase: Phase
@@ -139,7 +140,8 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     }
     setData(next)
     onSessionChange({ ...next, endTime, pauseRemaining: null })
-    scheduleWorkTicks(total)   // pre-schedule all ticks on audio thread
+    scheduleWorkTicks(total)
+    scheduleNotification(total, 'work')
   }, [onSessionChange])
 
   const pause = useCallback(() => {
@@ -147,7 +149,8 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     endTimeRef.current = null
     pauseRemainingRef.current = rem
     stateRef.current = 'paused'
-    cancelScheduledTicks()     // mute all future pre-scheduled ticks
+    cancelScheduledTicks()
+    cancelNotification()
     setData(prev => ({ ...prev, state: 'paused', remaining: rem }))
     onSessionChange({ state: 'paused', endTime: null, pauseRemaining: rem })
   }, [onSessionChange])
@@ -160,11 +163,13 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     stateRef.current = 'running'
     setData(prev => ({ ...prev, state: 'running', remaining: rem }))
     onSessionChange({ state: 'running', endTime, pauseRemaining: null })
-    scheduleWorkTicks(rem)     // re-schedule remaining ticks
+    scheduleWorkTicks(rem)
+    scheduleNotification(rem, dataRef.current.phase)
   }, [onSessionChange])
 
   const reset = useCallback(() => {
     cancelScheduledTicks()
+    cancelNotification()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -188,6 +193,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
    *  Used when a break completes — user returns to StartScreen with notes intact. */
   const softReset = useCallback(() => {
     cancelScheduledTicks()
+    cancelNotification()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -215,7 +221,8 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   }, [onSessionChange])
 
   const startNextPhase = useCallback((completedPomodoros: number) => {
-    cancelScheduledTicks()   // stop work ticks before break
+    cancelScheduledTicks()
+    cancelNotification()
     const isLongBreak = completedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0
     const phase: Phase = completedPomodoros === 0 ? 'work' : isLongBreak ? 'long-break' : 'short-break'
     const total = PHASE_DURATIONS[phase]
@@ -233,6 +240,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       startedAt: new Date().toISOString(),
     }))
     onSessionChange({ phase, state: 'running', endTime, pauseRemaining: null, totalSeconds: total })
+    if (phase !== 'work') scheduleNotification(total, phase)
   }, [onSessionChange])
 
   const skipBreak = useCallback(() => {

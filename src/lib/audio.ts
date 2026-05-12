@@ -70,8 +70,6 @@ export function scheduleWorkTicks(remainingSeconds: number) {
   const ctx = getCtx()
   if (!ctx || remainingSeconds <= 0) return
 
-  console.log('[audio] scheduleWorkTicks', { remainingSeconds, ctxState: ctx.state, ctxTime: ctx.currentTime })
-
   tickMasterGain = ctx.createGain()
   tickMasterGain.gain.value = 1
   tickMasterGain.connect(ctx.destination)
@@ -92,30 +90,6 @@ export function scheduleWorkTicks(remainingSeconds: number) {
     osc.stop(t + 0.05)
   }
   ticksActive = true
-
-  // ── DEBUG: schedule a loud test tone at +30s so lock-screen can be verified ──
-  // Remove after confirming lock-screen audio works.
-  scheduleDebugTone(ctx, now + 30)
-  scheduleDebugTone(ctx, now + 60)
-}
-
-/** Loud 880Hz 1-second tone — purely for lock-screen debugging. */
-function scheduleDebugTone(ctx: AudioContext, atTime: number) {
-  try {
-    const osc  = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.type = 'sine'
-    osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.4, atTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, atTime + 1.0)
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start(atTime)
-    osc.stop(atTime + 1.0)
-    console.log('[audio] debug tone scheduled at ctx.currentTime +', Math.round(atTime - ctx.currentTime), 's (wall clock ~', new Date(Date.now() + (atTime - ctx.currentTime) * 1000).toLocaleTimeString(), ')')
-  } catch (e) {
-    console.error('[audio] scheduleDebugTone failed', e)
-  }
 }
 
 export function cancelScheduledTicks() {
@@ -199,12 +173,10 @@ export function unlockAudioContext() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
     setupMediaSession()
-
-    // ── DEBUG: log every AudioContext state change ──
-    audioCtx.addEventListener('statechange', () => {
-      console.log('[audio] ctx.state →', audioCtx?.state, '@ wall', new Date().toLocaleTimeString())
-    })
-    console.log('[audio] AudioContext created, state:', audioCtx.state)
+    // Request notification permission opportunistically on first user gesture
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
   }
 
   // Unconditional resume — iOS ctx.state is unreliable.
