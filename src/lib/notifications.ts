@@ -29,8 +29,8 @@ export function scheduleNotification(remainingSeconds: number, phase: string) {
   if (remainingSeconds <= 0) return
 
   const isWork = phase === 'work'
-  const title  = isWork ? '🍅 番茄结束！' : '☕ 休息结束！'
-  const body   = isWork ? '做得好，休息一下吧～' : '准备好开始下一个番茄了吗？'
+  const title  = isWork ? '🍅 番茄结束' : '☕ 休息结束'
+  const body   = isWork ? '该休息了' : '继续下一个番茄'
 
   notificationTimer = setTimeout(() => {
     try {

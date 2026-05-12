@@ -1,6 +1,6 @@
 {
-  "name": "🍅 Pomodoro",
-  "short_name": "Pomodoro",
+  "name": "🍅",
+  "short_name": "🍅",
   "description": "番茄钟 — 跨设备同步，连接 Notion",
   "start_url": "/",
   "display": "standalone",
