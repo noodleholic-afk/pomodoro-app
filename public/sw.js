@@ -1,4 +1,4 @@
-const CACHE = 'pomodoro-v1'
+const CACHE = 'pomodoro-v2'
 const STATIC = [
   '/',
   '/index.html',
