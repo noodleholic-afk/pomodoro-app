@@ -77,9 +77,11 @@ async function getSubscription(): Promise<PushSubscription | null> {
     return sub
   } catch (err: any) {
     console.error('[push] subscribe failed', err)
-    if (!lastSubError.includes('subscribe()')) {
+    // Preserve specific inner-catch prefixes; only set if nothing more specific is there
+    if (!lastSubError.includes('decode:') && !lastSubError.includes('subscribe()') && !lastSubError.includes('getSubscription()')) {
       lastSubError = `outer: ${err?.name || ''} ${err?.message || String(err)}`
     }
+    lastSubError += ` | VAPID=[${VAPID_PUBLIC_KEY?.slice(0,12)}...${VAPID_PUBLIC_KEY?.slice(-6)}] len=${VAPID_PUBLIC_KEY?.length}`
     return null
   }
 }
