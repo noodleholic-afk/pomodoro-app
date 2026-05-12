@@ -38,8 +38,18 @@ async function getSubscription(): Promise<PushSubscription | null> {
   try {
     const reg = await navigator.serviceWorker.ready
     lastSubError = `key.len=${VAPID_PUBLIC_KEY.length} key.head=${VAPID_PUBLIC_KEY.slice(0, 8)}...`
-    // Re-use existing subscription if any
-    let sub = await reg.pushManager.getSubscription()
+    // Try to retrieve existing subscription; iOS may throw if a stale/bad one is cached
+    let sub: PushSubscription | null = null
+    try {
+      sub = await reg.pushManager.getSubscription()
+      // If the existing subscription's key doesn't match current VAPID, drop it
+      if (sub) {
+        try { await sub.unsubscribe(); sub = null; lastSubError += ' | dropped stale sub' } catch {}
+      }
+    } catch (e: any) {
+      lastSubError = `getSubscription() threw ${e?.name}: ${e?.message} — trying fresh subscribe`
+      sub = null
+    }
     if (!sub) {
       // Build a proper ArrayBuffer (not just a Uint8Array view)
       let keyBuffer: ArrayBuffer
