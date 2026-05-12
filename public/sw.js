@@ -21,6 +21,25 @@ self.addEventListener('activate', (e) => {
   )
 })
 
+// ─── Push notifications (Web Push / VAPID) ───────────────────────────────────
+self.addEventListener('push', (e) => {
+  let data = { title: '🍅 番茄提醒', body: '' }
+  try { data = e.data?.json() ?? data } catch {}
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body:   data.body,
+      icon:   '/icon.png',
+      badge:  '/icon.png',
+      silent: false,
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  e.waitUntil(clients.openWindow('/'))
+})
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
   // Never cache Supabase API calls

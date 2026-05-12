@@ -4,6 +4,7 @@ import { PHASE_DURATIONS, POMODOROS_BEFORE_LONG_BREAK } from '../lib/constants'
 import { useAudio } from './useAudio'
 import { scheduleWorkTicks, cancelScheduledTicks } from '../lib/audio'
 import { scheduleNotification, cancelNotification } from '../lib/notifications'
+import { schedulePush, cancelPush } from '../lib/pushNotifications'
 
 export interface TimerData {
   phase: Phase
@@ -51,8 +52,21 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   const stateRef = useRef<TimerState>('idle')
   const dataRef = useRef<TimerData>(data)
   dataRef.current = data
+  const soundEnabledRef = useRef(soundEnabled)
+  soundEnabledRef.current = soundEnabled
 
   const { tick, alarm } = useAudio(soundEnabled)
+
+  // Sync pre-scheduled ticks and notifications with soundEnabled toggle
+  useEffect(() => {
+    if (!soundEnabled) {
+      cancelScheduledTicks()
+      // Keep notifications even when sound off (visual alert)
+    } else if (stateRef.current === 'running') {
+      const rem = calcRemaining(endTimeRef.current, null)
+      if (rem > 0) scheduleWorkTicks(rem)
+    }
+  }, [soundEnabled])
 
   // Tick interval
   useEffect(() => {
@@ -140,8 +154,9 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     }
     setData(next)
     onSessionChange({ ...next, endTime, pauseRemaining: null })
-    scheduleWorkTicks(total)
+    if (soundEnabledRef.current) scheduleWorkTicks(total)
     scheduleNotification(total, 'work')
+    schedulePush(endTime, 'work')
   }, [onSessionChange])
 
   const pause = useCallback(() => {
@@ -151,6 +166,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     stateRef.current = 'paused'
     cancelScheduledTicks()
     cancelNotification()
+    cancelPush()
     setData(prev => ({ ...prev, state: 'paused', remaining: rem }))
     onSessionChange({ state: 'paused', endTime: null, pauseRemaining: rem })
   }, [onSessionChange])
@@ -163,13 +179,15 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     stateRef.current = 'running'
     setData(prev => ({ ...prev, state: 'running', remaining: rem }))
     onSessionChange({ state: 'running', endTime, pauseRemaining: null })
-    scheduleWorkTicks(rem)
+    if (soundEnabledRef.current) scheduleWorkTicks(rem)
     scheduleNotification(rem, dataRef.current.phase)
+    schedulePush(endTime, dataRef.current.phase)
   }, [onSessionChange])
 
   const reset = useCallback(() => {
     cancelScheduledTicks()
     cancelNotification()
+    cancelPush()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -194,6 +212,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   const softReset = useCallback(() => {
     cancelScheduledTicks()
     cancelNotification()
+    cancelPush()
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -223,6 +242,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
   const startNextPhase = useCallback((completedPomodoros: number) => {
     cancelScheduledTicks()
     cancelNotification()
+    cancelPush()
     const isLongBreak = completedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0
     const phase: Phase = completedPomodoros === 0 ? 'work' : isLongBreak ? 'long-break' : 'short-break'
     const total = PHASE_DURATIONS[phase]
@@ -240,7 +260,10 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       startedAt: new Date().toISOString(),
     }))
     onSessionChange({ phase, state: 'running', endTime, pauseRemaining: null, totalSeconds: total })
-    if (phase !== 'work') scheduleNotification(total, phase)
+    if (phase !== 'work') {
+      scheduleNotification(total, phase)
+      schedulePush(endTime, phase)
+    }
   }, [onSessionChange])
 
   const skipBreak = useCallback(() => {
