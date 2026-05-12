@@ -1,9 +1,9 @@
 import type { Phase } from '../types'
 
 export const PHASE_DURATIONS: Record<Phase, number> = {
-  'work': 25 * 60,
-  'short-break': 5 * 60,
-  'long-break': 15 * 60,
+  'work': 1 * 60,        // TEST: 1 min (restore to 25 * 60)
+  'short-break': 1 * 60, // TEST: 1 min (restore to 5 * 60)
+  'long-break': 1 * 60,  // TEST: 1 min (restore to 15 * 60)
 }
 
 export const POMODOROS_BEFORE_LONG_BREAK = 4

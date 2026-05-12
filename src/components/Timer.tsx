@@ -191,7 +191,7 @@ export function Timer({
             {data.taskName}
           </div>
           {area && (
-            <div style={{ fontSize: 15, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em' }}>
+            <div style={{ fontSize: 15, color: '#ffcc99', marginTop: 6, letterSpacing: '0.06em', fontFamily: 'Zpix, monospace' }}>
               {area}
             </div>
           )}
