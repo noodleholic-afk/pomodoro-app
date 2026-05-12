@@ -173,10 +173,11 @@ export function unlockAudioContext() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
     setupMediaSession()
-    // Request notification permission opportunistically on first user gesture
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {})
-    }
+  }
+
+  // Request notification permission on every user gesture until granted/denied
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {})
   }
 
   // Unconditional resume — iOS ctx.state is unreliable.

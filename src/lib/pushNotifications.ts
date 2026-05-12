@@ -56,7 +56,17 @@ async function getSubscription(): Promise<PushSubscription | null> {
 export async function schedulePush(fireAt: string, phase: string): Promise<void> {
   await cancelPush() // always clean up previous
 
+  // DEBUG: show push subscription status
+  const notifSupported = 'Notification' in window
+  const notifPerm = notifSupported ? Notification.permission : 'N/A'
+  const swSupported = 'serviceWorker' in navigator
+  const pushSupported = 'PushManager' in window
+  const hasVapid = !!VAPID_PUBLIC_KEY
+
   const sub = await getSubscription()
+
+  alert(`[DEBUG Push]\nNotification: ${notifSupported} (${notifPerm})\nSW: ${swSupported}\nPushManager: ${pushSupported}\nVAPID key: ${hasVapid}\nSubscription: ${sub ? 'OK' : 'FAILED'}`)
+
   if (!sub) return
 
   const { data, error } = await supabase
@@ -71,9 +81,11 @@ export async function schedulePush(fireAt: string, phase: string): Promise<void>
 
   if (error) {
     console.error('[push] schedulePush error', error)
+    alert(`[DEBUG Push] DB insert error: ${error.message}`)
     return
   }
   scheduleRowId = data?.id ?? null
+  alert(`[DEBUG Push] Scheduled! fire_at=${fireAt}, row=${scheduleRowId}`)
 }
 
 /** Cancel a pending server push (called on pause/reset). */
