@@ -24,6 +24,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 let pushSubscription: PushSubscription | null = null
 let scheduleRowId: string | null = null
+let lastSubError: string = ''
 
 /** Get (or create) the push subscription. Returns null if unsupported/denied. */
 async function getSubscription(): Promise<PushSubscription | null> {
@@ -36,21 +37,34 @@ async function getSubscription(): Promise<PushSubscription | null> {
 
   try {
     const reg = await navigator.serviceWorker.ready
+    lastSubError = `SW reg.scope=${reg.scope}`
     // Re-use existing subscription if any
     let sub = await reg.pushManager.getSubscription()
     if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
-      })
+      try {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as any,
+        })
+      } catch (e: any) {
+        lastSubError = `subscribe(): ${e?.name || ''} ${e?.message || String(e)}`
+        throw e
+      }
+    } else {
+      lastSubError = 'existing subscription reused'
     }
     pushSubscription = sub
     return sub
-  } catch (err) {
+  } catch (err: any) {
     console.error('[push] subscribe failed', err)
+    if (!lastSubError.includes('subscribe()')) {
+      lastSubError = `outer: ${err?.name || ''} ${err?.message || String(err)}`
+    }
     return null
   }
 }
+
+export function getLastSubError(): string { return lastSubError }
 
 /** Schedule a server-side push at `fireAt` (ISO string). */
 export async function schedulePush(fireAt: string, phase: string): Promise<void> {
@@ -65,7 +79,7 @@ export async function schedulePush(fireAt: string, phase: string): Promise<void>
 
   const sub = await getSubscription()
 
-  alert(`[DEBUG Push]\nNotification: ${notifSupported} (${notifPerm})\nSW: ${swSupported}\nPushManager: ${pushSupported}\nVAPID key: ${hasVapid}\nSubscription: ${sub ? 'OK' : 'FAILED'}`)
+  alert(`[DEBUG Push]\nNotification: ${notifSupported} (${notifPerm})\nSW: ${swSupported}\nPushManager: ${pushSupported}\nVAPID key: ${hasVapid}\nSubscription: ${sub ? 'OK' : 'FAILED'}\n\nLast error / info:\n${lastSubError}`)
 
   if (!sub) return
 
