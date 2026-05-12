@@ -13,7 +13,11 @@
 import { supabase } from './supabase'
 
 // Set by Vite from .env.local  VITE_VAPID_PUBLIC_KEY
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined
+// Strip BOM / zero-width / whitespace that can sneak in from env var setup
+const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined)
+  ?.replace(/^﻿/, '')
+  ?.replace(/[​-‍﻿]/g, '')
+  ?.trim()
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
