@@ -4,6 +4,7 @@ import { PHASE_DURATIONS, POMODOROS_BEFORE_LONG_BREAK } from '../lib/constants'
 import { useAudio } from './useAudio'
 import { scheduleWorkTicks, cancelScheduledTicks } from '../lib/audio'
 import { scheduleNotification, cancelNotification } from '../lib/notifications'
+import { setWakeLockDesired } from '../lib/wakeLock'
 import { schedulePush, cancelPush } from '../lib/pushNotifications'
 
 export interface TimerData {
@@ -78,6 +79,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       if (rem === 0) {
         clearInterval(interval)
         alarm(data.phase)
+        setWakeLockDesired(false)
         stateRef.current = 'completed'
         setData(prev => {
           const next = { ...prev, state: 'completed' as TimerState }
@@ -157,6 +159,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     if (soundEnabledRef.current) scheduleWorkTicks(total)
     scheduleNotification(total, 'work')
     schedulePush(endTime, 'work')
+    setWakeLockDesired(true)
   }, [onSessionChange])
 
   const pause = useCallback(() => {
@@ -167,6 +170,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     cancelScheduledTicks()
     cancelNotification()
     cancelPush()
+    setWakeLockDesired(false)
     setData(prev => ({ ...prev, state: 'paused', remaining: rem }))
     onSessionChange({ state: 'paused', endTime: null, pauseRemaining: rem })
   }, [onSessionChange])
@@ -182,12 +186,14 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     if (soundEnabledRef.current) scheduleWorkTicks(rem)
     scheduleNotification(rem, dataRef.current.phase)
     schedulePush(endTime, dataRef.current.phase)
+    setWakeLockDesired(true)
   }, [onSessionChange])
 
   const reset = useCallback(() => {
     cancelScheduledTicks()
     cancelNotification()
     cancelPush()
+    setWakeLockDesired(false)
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -213,6 +219,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
     cancelScheduledTicks()
     cancelNotification()
     cancelPush()
+    setWakeLockDesired(false)
     endTimeRef.current = null
     pauseRemainingRef.current = null
     stateRef.current = 'idle'
@@ -264,6 +271,7 @@ export function useTimer({ soundEnabled, onPhaseComplete, onSessionChange }: Use
       scheduleNotification(total, phase)
       schedulePush(endTime, phase)
     }
+    setWakeLockDesired(true)
   }, [onSessionChange])
 
   const skipBreak = useCallback(() => {
