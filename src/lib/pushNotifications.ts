@@ -37,17 +37,27 @@ async function getSubscription(): Promise<PushSubscription | null> {
 
   try {
     const reg = await navigator.serviceWorker.ready
-    lastSubError = `SW reg.scope=${reg.scope}`
+    lastSubError = `key.len=${VAPID_PUBLIC_KEY.length} key.head=${VAPID_PUBLIC_KEY.slice(0, 8)}...`
     // Re-use existing subscription if any
     let sub = await reg.pushManager.getSubscription()
     if (!sub) {
+      // Build a proper ArrayBuffer (not just a Uint8Array view)
+      let keyBuffer: ArrayBuffer
+      try {
+        const u8 = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        keyBuffer = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer
+        lastSubError += ` | decoded ${u8.length}B`
+      } catch (e: any) {
+        lastSubError = `decode: ${e?.name || ''} ${e?.message || String(e)} | key=${VAPID_PUBLIC_KEY}`
+        throw e
+      }
       try {
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as any,
+          applicationServerKey: keyBuffer,
         })
       } catch (e: any) {
-        lastSubError = `subscribe(): ${e?.name || ''} ${e?.message || String(e)}`
+        lastSubError = `subscribe(): ${e?.name || ''} ${e?.message || String(e)} | key.len=${VAPID_PUBLIC_KEY.length} bufLen=${keyBuffer.byteLength}`
         throw e
       }
     } else {
